@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexChain — Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060810;
+  --surface: #0b0f18;
+  --surface2: #10151f;
+  --surface3: #161d2a;
+  --border: rgba(99,102,241,0.13);
+  --border2: rgba(255,255,255,0.06);
+  --accent: #6366f1;
+  --accent-glow: rgba(99,102,241,0.2);
+  --accent2: #f59e0b;
+  --accent3: #10b981;
+  --danger: #ef4444;
+  --warn: #f59e0b;
+  --text: #e2e8f0;
+  --muted: #475569;
+  --muted2: #334155;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* BG */
+.bg-fx {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+}
+.bg-fx::before {
+  content: '';
+  position: absolute;
+  width: 800px; height: 800px;
+  background: radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 65%);
+  top: -300px; left: -200px;
+  animation: bgmove 16s ease-in-out infinite alternate;
+}
+.bg-fx::after {
+  content: '';
+  position: absolute;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(16,185,129,0.04) 0%, transparent 65%);
+  bottom: -200px; right: -100px;
+  animation: bgmove2 12s ease-in-out infinite alternate;
+}
+@keyframes bgmove { to { transform: translate(80px, 100px); } }
+@keyframes bgmove2 { to { transform: translate(-60px, -80px); } }
+
+.scanlines {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+}
+
+/* LAYOUT */
+.shell { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+/* SIDEBAR */
+aside {
+  width: 250px; flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+}
+
+.admin-badge-wrap {
+  padding: 24px 22px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.admin-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 18px; font-weight: 800; letter-spacing: -0.3px;
+  margin-bottom: 10px;
+}
+.admin-logo-icon {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, var(--accent), #818cf8);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.admin-logo span { color: var(--accent); }
+.admin-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.25);
+  border-radius: 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 1.5px;
+}
+.admin-badge::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%; background: var(--accent);
+  animation: blink 1.5s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+nav { padding: 16px 0; flex: 1; overflow-y: auto; }
+
+.nav-section {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; text-transform: uppercase;
+  letter-spacing: 2px; color: var(--muted2);
+  padding: 12px 22px 6px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 22px;
+  font-size: 13px; font-weight: 600;
+  color: var(--muted); cursor: pointer;
+  transition: all 0.18s;
+  border-left: 2px solid transparent;
+  user-select: none;
+}
+.nav-item:hover { color: var(--text); background: rgba(255,255,255,0.025); }
+.nav-item.active {
+  color: #a5b4fc;
+  border-left-color: var(--accent);
+  background: rgba(99,102,241,0.07);
+}
+.nav-icon { font-size: 15px; width: 18px; text-align: center; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--accent);
+  color: #fff;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+.nav-badge.warn { background: var(--warn); color: #000; }
+.nav-badge.danger { background: var(--danger); }
+
+.sidebar-footer {
+  padding: 16px 22px;
+  border-top: 1px solid var(--border);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; color: var(--muted);
+}
+.admin-pill {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 9px;
+}
+.admin-av {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, var(--accent), #818cf8);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: #fff;
+}
+
+/* MAIN */
+main {
+  margin-left: 250px; flex: 1;
+  padding: 36px 44px;
+  overflow-y: auto;
+}
+
+/* PAGE SECTIONS */
+.page { display: none; animation: fadeUp 0.4s ease both; }
+.page.active { display: block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+
+/* TOPBAR */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 32px;
+}
+.page-heading { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+.page-heading span { color: var(--accent); }
+.page-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--muted); margin-top: 4px;
+}
+.topbar-actions { display: flex; gap: 10px; }
+
+/* STAT CARDS */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  position: relative; overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.stat-card:hover { transform: translateY(-2px); border-color: rgba(99,102,241,0.3); }
+.stat-card::after {
+  content: '';
+  position: absolute;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  top: -20px; right: -20px;
+  opacity: 0.12;
+}
+.stat-card.indigo::after { background: var(--accent); }
+.stat-card.gold::after { background: var(--accent2); }
+.stat-card.green::after { background: var(--accent3); }
+.stat-card.red::after { background: var(--danger); }
+
+.stat-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--muted);
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.stat-val { font-size: 30px; font-weight: 800; letter-spacing: -1px; color: var(--text); }
+.stat-delta {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; margin-top: 6px;
+}
+.stat-delta.up { color: var(--accent3); }
+.stat-delta.dn { color: var(--danger); }
+
+/* CARD */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+  margin-bottom: 22px;
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.card-title { font-size: 14px; font-weight: 700; }
+.card-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--muted);
+}
+
+/* BUTTONS */
+.btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: all 0.18s;
+  border: none; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #5254e0; box-shadow: 0 6px 20px rgba(99,102,241,0.35); transform: translateY(-1px); }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+.btn-ghost:hover { border-color: rgba(255,255,255,0.15); color: var(--text); }
+.btn-danger { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: var(--danger); }
+.btn-danger:hover { background: rgba(239,68,68,0.2); }
+.btn-success { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: var(--accent3); }
+.btn-success:hover { background: rgba(16,185,129,0.2); }
+.btn-warn { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); color: var(--accent2); }
+.btn-warn:hover { background: rgba(245,158,11,0.2); }
+.btn-sm { padding: 6px 12px; font-size: 11px; }
+.btn-xs { padding: 4px 9px; font-size: 10px; border-radius: 5px; }
+
+/* SEARCH */
+.search-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 9px;
+  margin: 16px 24px;
+}
+.search-bar input {
+  flex: 1; background: transparent; border: none; outline: none;
+  font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text);
+}
+.search-bar input::placeholder { color: var(--muted); }
+
+/* USER TABLE */
+.user-table { width: 100%; border-collapse: collapse; }
+.user-table th {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--muted);
+  padding: 10px 24px; text-align: left;
+  border-bottom: 1px solid var(--border);
+  font-weight: 400;
+}
+.user-table td {
+  padding: 14px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  font-size: 13px; vertical-align: middle;
+}
+.user-table tr:last-child td { border-bottom: none; }
+.user-table tr:hover td { background: rgba(255,255,255,0.015); }
+
+.user-cell { display: flex; align-items: center; gap: 12px; }
+.uav {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; flex-shrink: 0;
+}
+.uav-name { font-size: 13px; font-weight: 700; }
+.uav-email { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+.status-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 4px;
+  font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500;
+}
+.status-badge::before { content:''; width:5px;height:5px;border-radius:50%; }
+.badge-active { background: rgba(16,185,129,0.1); color: var(--accent3); }
+.badge-active::before { background: var(--accent3); }
+.badge-pending { background: rgba(245,158,11,0.1); color: var(--accent2); }
+.badge-pending::before { background: var(--accent2); }
+.badge-suspended { background: rgba(239,68,68,0.1); color: var(--danger); }
+.badge-suspended::before { background: var(--danger); }
+.badge-kyc { background: rgba(99,102,241,0.1); color: #a5b4fc; }
+.badge-kyc::before { background: #a5b4fc; }
+
+.balance-mono {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; color: var(--accent3);
+}
+.vol-mono {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--muted);
+}
+
+.action-btns { display: flex; gap: 6px; }
+
+/* MODAL */
+.overlay {
+  position: fixed; inset: 0; z-index: 999;
+  background: rgba(6,8,16,0.88);
+  backdrop-filter: blur(16px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s;
+  padding: 20px;
+}
+.overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  width: 100%; max-width: 560px;
+  max-height: 92vh; overflow-y: auto;
+  transform: translateY(28px) scale(0.97);
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 40px 80px rgba(0,0,0,0.7);
+}
+.overlay.open .modal { transform: translateY(0) scale(1); }
+.modal-lg { max-width: 680px; }
+
+.modal-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 22px 26px 18px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+  background: var(--surface);
+  border-radius: 18px 18px 0 0;
+}
+.modal-title { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; }
+.modal-sub { font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); margin-top:3px; }
+.close-btn {
+  width: 30px; height: 30px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 14px; color: var(--muted);
+  flex-shrink: 0; transition: all 0.2s;
+}
+.close-btn:hover { color: var(--text); }
+.modal-body { padding: 22px 26px; }
+
+/* FORM */
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--muted);
+  margin-bottom: 7px;
+}
+.form-input, .form-select {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace; font-size: 13px;
+  outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: none;
+}
+.form-input:focus, .form-select:focus {
+  border-color: rgba(99,102,241,0.5);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
+}
+.form-input::placeholder { color: var(--muted); opacity: 0.5; }
+.form-select option { background: var(--surface2); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-btn {
+  width: 100%; padding: 13px;
+  border: none; border-radius: 9px;
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800;
+  cursor: pointer; transition: all 0.2s; margin-top: 6px;
+}
+.form-btn-indigo { background: var(--accent); color: #fff; }
+.form-btn-indigo:hover { background: #5254e0; transform: translateY(-1px); box-shadow: 0 10px 24px rgba(99,102,241,0.3); }
+.form-btn-green { background: var(--accent3); color: #fff; }
+.form-btn-green:hover { background: #0ea571; transform: translateY(-1px); box-shadow: 0 10px 24px rgba(16,185,129,0.3); }
+
+/* TOAST */
+.toast {
+  position: fixed; top: 22px; right: 22px; z-index: 9999;
+  padding: 13px 18px;
+  background: var(--surface);
+  border-radius: 9px;
+  font-family: 'DM Mono', monospace; font-size: 12px;
+  transform: translateX(140%);
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 16px 36px rgba(0,0,0,0.5);
+  display: flex; align-items: center; gap: 9px;
+  max-width: 320px;
+}
+.toast.show { transform: translateX(0); }
+.toast.success { border: 1px solid var(--accent3); color: var(--accent3); }
+.toast.info { border: 1px solid var(--accent); color: #a5b4fc; }
+.toast.warn { border: 1px solid var(--accent2); color: var(--accent2); }
+.toast.error { border: 1px solid var(--danger); color: var(--danger); }
+
+/* USER PROFILE PANEL IN MODAL */
+.user-profile-strip {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+.wallet-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 9px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+}
+.wallet-item:hover { border-color: rgba(99,102,241,0.3); }
+.wicon { width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0; }
+.winfo { flex: 1; overflow: hidden; }
+.wname { font-size:13px;font-weight:700;margin-bottom:2px; }
+.waddr {
+  font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;
+}
+.wbal { font-family:'DM Mono',monospace;font-size:12px;color:var(--accent3);white-space:nowrap; }
+
+/* ACTIVITY LOG */
+.log-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.log-row:last-child { border-bottom: none; }
+.log-dot { width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0; }
+.log-text { font-family:'DM Mono',monospace;font-size:12px;color:var(--text);line-height:1.5; }
+.log-text span { color: var(--muted); display:block;font-size:10px;margin-top:2px; }
+
+/* BUY LINKS SECTION */
+.link-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 9px;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+}
+.link-row:hover { border-color: rgba(99,102,241,0.25); }
+.link-icon { width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0; }
+.link-info { flex:1; }
+.link-name { font-size:13px;font-weight:700;margin-bottom:3px; }
+.link-url { font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);word-break:break-all;cursor:pointer; }
+.link-url.empty { color:var(--muted);font-style:italic; }
+.link-actions { display:flex;gap:8px; }
+
+/* FILTER TABS */
+.filter-tabs {
+  display: flex; gap: 6px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.ftab {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; cursor: pointer;
+  transition: all 0.2s;
+  background: transparent; color: var(--muted); border: 1px solid transparent;
+}
+.ftab.active { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.3); color: #a5b4fc; }
+.ftab:hover:not(.active) { color: var(--text); }
+
+/* KYC section */
+.kyc-doc {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 9px; margin-bottom: 10px;
+}
+.kyc-type { font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);flex:1; }
+.kyc-status { font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:4px; }
+
+/* INFO BOX */
+.info-box {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 14px;
+  background: rgba(99,102,241,0.06);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 9px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: #a5b4fc; line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+/* SECTION DIVIDER */
+.sdiv {
+  display: flex; align-items: center; gap: 10px;
+  margin: 20px 0 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted);
+}
+.sdiv::before,.sdiv::after { content:'';flex:1;height:1px;background:var(--border); }
+
+/* METRIC MINI */
+.metric-row { display:flex;gap:12px;margin-bottom:20px; }
+.metric-mini {
+  flex:1;padding:14px 16px;
+  background:var(--surface2);border:1px solid var(--border2);border-radius:9px;
+}
+.mm-label { font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px; }
+.mm-val { font-size:20px;font-weight:800;letter-spacing:-0.5px; }
+
+/* TABS */
+.tab-nav { display:flex;gap:0; }
+.tab-btn {
+  padding:13px 20px;
+  background:transparent;border:none;
+  font-family:'Syne',sans-serif;font-size:13px;font-weight:600;
+  color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:all 0.18s;
+}
+.tab-btn.active { color:var(--accent);border-bottom-color:var(--accent);background:rgba(99,102,241,0.04); }
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+
+@media(max-width:900px){
+  aside{width:56px;}
+  main{margin-left:56px;padding:20px 16px;}
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .nav-item span:not(.nav-icon){display:none;}
+  .nav-badge{display:none;}
+  .admin-badge-wrap{padding:16px 12px;}
+  .admin-logo span{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="scanlines"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toast-icon">✓</span><span id="toast-msg"></span></div>
+
+<div class="shell">
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<aside>
+  <div class="admin-badge-wrap">
+    <div class="admin-logo">
+      <div class="admin-logo-icon">⬡</div>
+      Nex<span>Chain</span>
+    </div>
+    <div class="admin-badge">Admin Console</div>
+  </div>
+  <nav>
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="showPage('overview',this)">
+      <span class="nav-icon">◈</span><span>Dashboard</span>
+    </div>
+    <div class="nav-item" onclick="showPage('users',this)">
+      <span class="nav-icon">◉</span><span>Users</span>
+      <span class="nav-badge" id="users-count-badge">6</span>
+    </div>
+    <div class="nav-item" onclick="showPage('activity',this)">
+      <span class="nav-icon">↯</span><span>Activity Log</span>
+      <span class="nav-badge warn">12</span>
+    </div>
+
+    <div class="nav-section">Tools</div>
+    <div class="nav-item" onclick="showPage('wallets',this)">
+      <span class="nav-icon">⬡</span><span>Wallet Manager</span>
+    </div>
+    <div class="nav-item" onclick="showPage('buy-links',this)">
+      <span class="nav-icon">⇗</span><span>Buy Links</span>
+    </div>
+    <div class="nav-item" onclick="showPage('kyc',this)">
+      <span class="nav-icon">⊟</span><span>KYC Review</span>
+      <span class="nav-badge danger">3</span>
+    </div>
+
+    <div class="nav-section">System</div>
+    <div class="nav-item" onclick="showPage('settings',this)">
+      <span class="nav-icon">⚙</span><span>Settings</span>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <button onclick="window.location.href='nexchain-profile.html'" style="flex:1;padding:8px;background:rgba(0,255,163,0.08);border:1px solid rgba(0,255,163,0.2);border-radius:7px;color:#00ffa3;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:all .2s;" onmouseenter="this.style.background='rgba(0,255,163,0.15)'" onmouseleave="this.style.background='rgba(0,255,163,0.08)'">◈ Dashboard</button>
+      <button onclick="adminLogout()" style="flex:1;padding:8px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:7px;color:#ef4444;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:all .2s;" onmouseenter="this.style.background='rgba(239,68,68,0.15)'" onmouseleave="this.style.background='rgba(239,68,68,0.08)'">⏻ Logout</button>
+    </div>
+    <div class="admin-pill">
+      <div class="admin-av">A</div>
+      <div>
+        <div style="font-size:12px;font-weight:700;font-family:'Syne',sans-serif;">Admin</div>
+        <div style="font-size:10px;color:var(--muted);">Super Admin</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<main>
+
+<!-- ───── PAGE: OVERVIEW ───── -->
+<div class="page active" id="page-overview">
+  <div class="topbar">
+    <div>
+      <div class="page-heading">Admin <span>Dashboard</span></div>
+      <div class="page-sub">// NexChain Control Center · Feb 20, 2026</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost btn-sm" onclick="showPage('users',document.querySelector('[onclick*=users]'))">Manage Users</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('add-user-modal')">＋ Add User</button>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card indigo">
+      <div class="stat-label">◉ Total Users</div>
+      <div class="stat-val" id="stat-total-users">6</div>
+      <div class="stat-delta up">▲ +2 this week</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-label">⬡ Total AUM</div>
+      <div class="stat-val">$247K</div>
+      <div class="stat-delta up">▲ +$12.4K today</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">⇄ Conversions Today</div>
+      <div class="stat-val">14</div>
+      <div class="stat-delta up">▲ +5 vs yesterday</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">⊟ KYC Pending</div>
+      <div class="stat-val">3</div>
+      <div class="stat-delta dn">▲ Needs review</div>
+    </div>
+  </div>
+
+  <!-- Recent Users -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Recent Users</div>
+      <button class="btn btn-ghost btn-sm" onclick="showPage('users',document.querySelectorAll('.nav-item')[1])">View All →</button>
+    </div>
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>User</th><th>Status</th><th>Balance</th><th>Wallets</th><th>Joined</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="overview-user-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Activity Feed -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Live Activity Feed</div>
+      <span class="admin-badge" style="font-size:9px;">LIVE</span>
+    </div>
+    <div id="activity-feed"></div>
+  </div>
+</div>
+
+<!-- ───── PAGE: USERS ───── -->
+<div class="page" id="page-users">
+  <div class="topbar">
+    <div>
+      <div class="page-heading">User <span>Management</span></div>
+      <div class="page-sub">// Monitor, edit and manage all registered accounts</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost btn-sm">↓ Export CSV</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('add-user-modal')">＋ Add User</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="filter-tabs">
+      <div class="ftab active" onclick="filterUsers('all',this)">All Users</div>
+      <div class="ftab" onclick="filterUsers('active',this)">Active</div>
+      <div class="ftab" onclick="filterUsers('pending',this)">Pending</div>
+      <div class="ftab" onclick="filterUsers('suspended',this)">Suspended</div>
+    </div>
+    <div class="search-bar">
+      <span style="color:var(--muted)">⌕</span>
+      <input type="text" placeholder="Search by name, email or ID..." id="user-search" oninput="renderUserTable()">
+    </div>
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>User</th><th>Status</th><th>KYC</th><th>Balance (USD)</th><th>Wallets</th><th>Last Active</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="user-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ───── PAGE: WALLETS ───── -->
+<div class="page" id="page-wallets">
+  <div class="topbar">
+    <div>
+      <div class="page-heading">Wallet <span>Manager</span></div>
+      <div class="page-sub">// Add and manage crypto wallets for user profiles</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-primary btn-sm" onclick="openModal('add-wallet-modal')">＋ Assign Wallet</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">All User Wallets</div>
+      <span class="card-count" id="wallet-count-label">Loading...</span>
+    </div>
+    <div class="search-bar">
+      <span style="color:var(--muted)">⌕</span>
+      <input type="text" placeholder="Search by user or wallet address..." id="wallet-search" oninput="renderWalletTable()">
+    </div>
+    <div id="wallet-list" style="padding:0 24px 16px;"></div>
+  </div>
+</div>
+
+<!-- ───── PAGE: BUY LINKS ───── -->
+<div class="page" id="page-buy-links">
+  <div class="topbar">
+    <div>
+      <div class="page-heading">Buy <span>Link Manager</span></div>
+      <div class="page-sub">// External URLs shown to users on the Buy Crypto screen</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-primary btn-sm" onclick="openModal('add-link-modal')">＋ Add Link</button>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <span>ℹ</span>
+    <span>These links appear in the "Buy Crypto" modal on users' dashboards. Set your exchange affiliate or direct purchase URLs here. Users will be redirected when they click.</span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Purchase Links</div>
+      <span class="card-count" id="link-count-label">0 links</span>
+    </div>
+    <div id="buy-links-list" style="padding:16px 24px;"></div>
+  </div>
+</div>
+
+<!-- ───── PAGE: ACTIVITY ───── -->
+<div class="page" id="page-activity">
+  <div class="topbar">
+    <div>
+      <div class="page-heading">Activity <span>Log</span></div>
+      <div class="page-sub">// All user and system events</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost btn-sm">↓ Export Log</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="filter-tabs">
+      <div class="ftab active">All Events</div>
+      <div class="ftab">Logins</div>
+      <div class="ftab">Trades</div>
+      <div class="ftab">Withdrawals</div>
+      <div class="ftab">Admin</div>
+    </div>
+    <div id="full-activity-log"></div>
+  </div>
+</div>
+
+<!-- ───── PAGE: KYC ───── -->
+<div class="page" id="page-kyc">
+  <div class="topbar">
+    <div>
+      <div class="page-heading">KYC <span>Review</span></div>
+      <div class="page-sub">// Verify user identity documents</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">Pending Verification</div></div>
+    <div id="kyc-list" style="padding:16px 24px;"></div>
+  </div>
+</div>
+
+<!-- ───── PAGE: SETTINGS ───── -->
+<div class="page" id="page-settings">
+  <div class="topbar">
+    <div>
+      <div class="page-heading">Platform <span>Settings</span></div>
+      <div class="page-sub">// Configure NexChain platform-wide options</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-primary btn-sm" onclick="showToast('Settings saved!','success')">Save Changes</button>
+    </div>
+  </div>
+  <div class="card" style="padding:24px;">
+    <div class="card-header" style="padding:0 0 18px;border:none;"><div class="card-title">Platform Fees</div></div>
+    <div class="form-row" style="margin-bottom:16px;">
+      <div class="form-group"><label class="form-label">Conversion Fee (%)</label><input class="form-input" type="number" value="0.5" step="0.1"></div>
+      <div class="form-group"><label class="form-label">Withdrawal Fee (%)</label><input class="form-input" type="number" value="0.25" step="0.05"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Min Withdrawal (USD)</label><input class="form-input" type="number" value="10"></div>
+      <div class="form-group"><label class="form-label">Max Daily Withdraw (USD)</label><input class="form-input" type="number" value="50000"></div>
+    </div>
+    <div class="sdiv">Security</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Admin Password</label><input class="form-input" type="password" placeholder="••••••••"></div>
+      <div class="form-group"><label class="form-label">2FA Status</label><select class="form-select"><option>Enabled (Recommended)</option><option>Disabled</option></select></div>
+    </div>
+    <div class="sdiv">Notifications</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Alert Email</label><input class="form-input" type="email" placeholder="admin@nexchain.io"></div>
+      <div class="form-group"><label class="form-label">Notify On</label><select class="form-select"><option>All Events</option><option>Withdrawals Only</option><option>KYC Submissions</option></select></div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- MODAL: VIEW / EDIT USER            -->
+<!-- ═══════════════════════════════════ -->
+<div class="overlay" id="view-user-modal" onclick="closeBD(event,'view-user-modal')">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="vu-title">User Profile</div>
+        <div class="modal-sub" id="vu-sub">—</div>
+      </div>
+      <div class="close-btn" onclick="closeModal('view-user-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="user-profile-strip" id="vu-strip"></div>
+
+      <div class="tab-nav" style="border-bottom:1px solid var(--border);margin-bottom:0;">
+        <button class="tab-btn active" onclick="switchTab('vu','profile',this)">Profile</button>
+        <button class="tab-btn" onclick="switchTab('vu','wallets',this)">Wallets</button>
+        <button class="tab-btn" onclick="switchTab('vu','balance',this)">Balance</button>
+        <button class="tab-btn" onclick="switchTab('vu','actions',this)">Actions</button>
+      </div>
+
+      <div style="padding-top:20px;">
+        <!-- Profile tab -->
+        <div class="tab-pane active" id="vu-tab-profile">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">First Name</label><input class="form-input" id="vu-fname"></div>
+            <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" id="vu-lname"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="vu-email"></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Account Status</label>
+              <select class="form-select" id="vu-status">
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">KYC Status</label>
+              <select class="form-select" id="vu-kyc">
+                <option value="verified">Verified</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+                <option value="not_submitted">Not Submitted</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">Member Tier</label>
+            <select class="form-select" id="vu-tier">
+              <option>Standard</option><option>Pro</option><option>VIP</option><option>Institutional</option>
+            </select>
+          </div>
+          <button class="form-btn form-btn-indigo" onclick="saveUserProfile()">Save Profile Changes</button>
+        </div>
+
+        <!-- Wallets tab -->
+        <div class="tab-pane" id="vu-tab-wallets">
+          <div class="info-box"><span>ℹ</span><span>Add crypto wallet addresses to this user's profile. They will appear on their dashboard.</span></div>
+          <div id="vu-wallet-list" style="margin-bottom:16px;"></div>
+          <button class="btn btn-primary btn-sm" onclick="openAddWalletForUser()">＋ Add Wallet to This User</button>
+        </div>
+
+        <!-- Balance tab -->
+        <div class="tab-pane" id="vu-tab-balance">
+          <div class="metric-row" id="vu-balance-metrics"></div>
+          <div class="sdiv">Manual Balance Adjustment</div>
+          <div class="info-box"><span>⚠</span><span>Use with caution. Manual adjustments are logged and irreversible.</span></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Coin</label>
+              <select class="form-select" id="adj-coin">
+                <option>BTC</option><option>ETH</option><option>SOL</option><option>USDC</option><option>BNB</option><option>XRP</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">Amount</label><input class="form-input" type="number" placeholder="0.00" id="adj-amount"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Operation</label>
+              <select class="form-select" id="adj-op"><option value="add">Add (Credit)</option><option value="subtract">Subtract (Debit)</option><option value="set">Set Exact Amount</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">Reason / Note</label><input class="form-input" placeholder="e.g. Manual top-up" id="adj-note"></div>
+          </div>
+          <button class="form-btn form-btn-green" onclick="applyBalanceAdj()">Apply Balance Adjustment</button>
+        </div>
+
+        <!-- Actions tab -->
+        <div class="tab-pane" id="vu-tab-actions">
+          <div class="sdiv">Account Actions</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <button class="btn btn-success" style="justify-content:flex-start;gap:12px;" onclick="setUserStatus('active')">✓ Activate Account</button>
+            <button class="btn btn-warn" style="justify-content:flex-start;gap:12px;" onclick="setUserStatus('pending')">⏸ Set as Pending</button>
+            <button class="btn btn-danger" style="justify-content:flex-start;gap:12px;" onclick="setUserStatus('suspended')">⊗ Suspend Account</button>
+          </div>
+          <div class="sdiv">Danger Zone</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <button class="btn btn-warn" style="justify-content:flex-start;gap:12px;" onclick="resetPassword()">🔑 Reset Password</button>
+            <button class="btn btn-danger" style="justify-content:flex-start;gap:12px;" onclick="deleteUser()">🗑 Delete Account</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- MODAL: ADD USER                    -->
+<!-- ═══════════════════════════════════ -->
+<div class="overlay" id="add-user-modal" onclick="closeBD(event,'add-user-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title">Add New User</div><div class="modal-sub">// Create account manually</div></div>
+      <div class="close-btn" onclick="closeModal('add-user-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">First Name</label><input class="form-input" placeholder="Satoshi" id="nu-fname"></div>
+        <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" placeholder="Nakamoto" id="nu-lname"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Email Address</label><input class="form-input" type="email" placeholder="user@email.com" id="nu-email"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Starting Balance (USD)</label><input class="form-input" type="number" placeholder="0.00" id="nu-balance"></div>
+        <div class="form-group"><label class="form-label">Member Tier</label>
+          <select class="form-select" id="nu-tier"><option>Standard</option><option>Pro</option><option>VIP</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Account Status</label>
+          <select class="form-select" id="nu-status"><option value="active">Active</option><option value="pending">Pending</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">KYC Status</label>
+          <select class="form-select" id="nu-kyc"><option value="verified">Verified</option><option value="pending">Pending</option><option value="not_submitted">Not Submitted</option></select>
+        </div>
+      </div>
+      <button class="form-btn form-btn-indigo" onclick="addUser()">＋ Create User Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- MODAL: ADD WALLET                  -->
+<!-- ═══════════════════════════════════ -->
+<div class="overlay" id="add-wallet-modal" onclick="closeBD(event,'add-wallet-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title">Assign Crypto Wallet</div><div class="modal-sub">// Add wallet to user profile</div></div>
+      <div class="close-btn" onclick="closeModal('add-wallet-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Select User</label>
+        <select class="form-select" id="aw-user-select"></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Cryptocurrency</label>
+          <select class="form-select" id="aw-coin">
+            <option value="BTC" data-icon="₿" data-color="rgba(247,147,26,0.12)">Bitcoin (BTC)</option>
+            <option value="ETH" data-icon="Ξ" data-color="rgba(98,126,234,0.12)">Ethereum (ETH)</option>
+            <option value="SOL" data-icon="◎" data-color="rgba(20,241,149,0.12)">Solana (SOL)</option>
+            <option value="USDC" data-icon="◈" data-color="rgba(0,200,255,0.1)">USD Coin (USDC)</option>
+            <option value="BNB" data-icon="⬟" data-color="rgba(240,185,11,0.12)">BNB (BNB)</option>
+            <option value="XRP" data-icon="✦" data-color="rgba(0,162,255,0.12)">XRP (XRP)</option>
+            <option value="ADA" data-icon="✧" data-color="rgba(0,51,173,0.15)">Cardano (ADA)</option>
+            <option value="DOGE" data-icon="Ð" data-color="rgba(203,162,61,0.12)">Dogecoin (DOGE)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Balance</label>
+          <input class="form-input" type="number" placeholder="0.00" id="aw-balance" step="0.0001">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Wallet Address</label>
+        <input class="form-input" placeholder="0x... or bc1..." id="aw-address">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Network</label>
+        <select class="form-select" id="aw-network">
+          <option>Mainnet</option><option>ERC-20</option><option>BEP-20</option><option>TRC-20</option><option>Solana</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes (optional)</label>
+        <input class="form-input" placeholder="e.g. Primary staking wallet" id="aw-notes">
+      </div>
+      <button class="form-btn form-btn-indigo" onclick="addWallet()">⬡ Assign Wallet</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- MODAL: ADD BUY LINK                -->
+<!-- ═══════════════════════════════════ -->
+<div class="overlay" id="add-link-modal" onclick="closeBD(event,'add-link-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title">Add Purchase Link</div><div class="modal-sub">// External buy link for users</div></div>
+      <div class="close-btn" onclick="closeModal('add-link-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="info-box">
+        <span>💡</span>
+        <span>Enter the external URL where users will be redirected to purchase crypto. Supports exchange, P2P, or payment provider links.</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Link Label / Provider Name</label>
+        <input class="form-input" placeholder="e.g. Buy with Coinbase" id="nl-name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">External URL</label>
+        <input class="form-input" type="url" placeholder="https://coinbase.com/buy?ref=..." id="nl-url">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Payment Type</label>
+          <select class="form-select" id="nl-type">
+            <option>Card (Visa/Mastercard)</option>
+            <option>Bank Transfer</option>
+            <option>P2P Exchange</option>
+            <option>Crypto Swap</option>
+            <option>Mobile Money</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fee Info</label>
+          <input class="form-input" placeholder="e.g. 1.9% fee" id="nl-fee">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Icon / Emoji</label>
+        <input class="form-input" placeholder="💳" id="nl-icon" maxlength="4" style="font-size:20px;text-align:center;">
+      </div>
+      <button class="form-btn form-btn-indigo" onclick="addBuyLink()">⇗ Save Purchase Link</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// NEXCHAIN SHARED STORE (inline)
+// ═══════════════════════════════════════
+const NX = {
+  init() {
+    if (!localStorage.getItem('nx_seeded')) {
+      this.setUsers([
+        { id:'u1', fname:'Satoshi', lname:'Nakamoto', email:'satoshi@nexchain.io', password:'satoshi123', status:'active', kyc:'verified', tier:'Pro', balance:24817.52, creditScore:30, giftApplied:false, joined:'Jan 10, 2026', lastActive:'Today', wallets:[] },
+        { id:'u2', fname:'Alice', lname:'Chen', email:'alice.chen@email.com', password:'alice1234', status:'active', kyc:'verified', tier:'Standard', balance:8420.00, creditScore:30, giftApplied:false, joined:'Jan 18, 2026', lastActive:'Today', wallets:[] },
+        { id:'u3', fname:'Marcus', lname:'Webb', email:'m.webb@protonmail.com', password:'marcus12', status:'pending', kyc:'pending', tier:'Standard', balance:1250.00, creditScore:30, giftApplied:false, joined:'Feb 2, 2026', lastActive:'Yesterday', wallets:[] },
+        { id:'u4', fname:'Yuki', lname:'Tanaka', email:'yuki@tanaka.jp', password:'yuki1234', status:'active', kyc:'verified', tier:'VIP', balance:91000.00, creditScore:30, giftApplied:false, joined:'Dec 5, 2025', lastActive:'2h ago', wallets:[] },
+        { id:'u5', fname:'Aisha', lname:'Okonkwo', email:'aisha.o@gmail.com', password:'aisha123', status:'suspended', kyc:'rejected', tier:'Standard', balance:320.00, creditScore:30, giftApplied:false, joined:'Feb 14, 2026', lastActive:'5d ago', wallets:[] },
+        { id:'u6', fname:'James', lname:'Osei', email:'james@nexbiz.io', password:'james123', status:'pending', kyc:'pending', tier:'Standard', balance:0, creditScore:30, giftApplied:false, joined:'Feb 19, 2026', lastActive:'1h ago', wallets:[] },
+      ]);
+      this.setWallets([]);
+      this.setBuyLinks([]);
+      this.setLog([{ type:'system', user:'System', msg:'NexChain initialized', time:'Today 00:00', color:'#a5b4fc' }]);
+      localStorage.setItem('nx_seeded', '1');
+    }
+  },
+  getUsers()    { try { return JSON.parse(localStorage.getItem('nx_users')) || []; } catch(e) { return []; } },
+  setUsers(v)   { localStorage.setItem('nx_users', JSON.stringify(v)); },
+  getWallets()  { try { return JSON.parse(localStorage.getItem('nx_wallets')) || []; } catch(e) { return []; } },
+  setWallets(v) { localStorage.setItem('nx_wallets', JSON.stringify(v)); },
+  getBuyLinks() { try { return JSON.parse(localStorage.getItem('nx_buylinks')) || []; } catch(e) { return []; } },
+  setBuyLinks(v){ localStorage.setItem('nx_buylinks', JSON.stringify(v)); },
+  getLog()      { try { return JSON.parse(localStorage.getItem('nx_log')) || []; } catch(e) { return []; } },
+  setLog(v)     { localStorage.setItem('nx_log', JSON.stringify(v)); },
+  getSession()  { try { return JSON.parse(localStorage.getItem('nx_session')); } catch(e) { return null; } },
+  setSession(v) { localStorage.setItem('nx_session', JSON.stringify(v)); },
+  clearSession(){ localStorage.removeItem('nx_session'); },
+  addLog(type, user, msg, color) {
+    const log = this.getLog();
+    const now = new Date();
+    const time = 'Today ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    log.unshift({ type, user, msg, time, color });
+    this.setLog(log.slice(0, 100));
+  },
+  updateUser(uid, patch) {
+    const users = this.getUsers();
+    const idx = users.findIndex(u => u.id === uid);
+    if (idx > -1) { users[idx] = { ...users[idx], ...patch }; this.setUsers(users); }
+  },
+  getUser(uid)  { return this.getUsers().find(u => u.id === uid) || null; },
+};
+
+// ── Init + Auth Guard ──
+NX.init();
+(function() {
+  const sess = NX.getSession();
+  if (!sess || sess.role !== 'admin') {
+    // Allow access if coming directly (dev mode) or redirect if no session at all
+    if (!sess) { window.location.href = 'crypto-site.html'; }
+  }
+})();
+
+function adminLogout() {
+  NX.addLog('logout', 'Admin', 'Admin logged out', '#a5b4fc');
+  NX.clearSession();
+  window.location.href = 'crypto-site.html';
+}
+
+// ── Live DB proxy that reads/writes to NX store ──
+const DB = {
+  get users()     { return NX.getUsers(); },
+  set users(v)    { NX.setUsers(v); },
+  get wallets()   { return NX.getWallets(); },
+  set wallets(v)  { NX.setWallets(v); },
+  get buyLinks()  { return NX.getBuyLinks(); },
+  set buyLinks(v) { NX.setBuyLinks(v); },
+  get activityLog(){ return NX.getLog(); },
+  set activityLog(v){ NX.setLog(v); },
+  currentUserId: null
+};
+
+let userFilter = 'all';
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  if (name === 'users') renderUserTable();
+  if (name === 'wallets') renderWalletTable();
+  if (name === 'buy-links') renderBuyLinks();
+  if (name === 'activity') renderFullActivityLog();
+  if (name === 'kyc') renderKYC();
+  if (name === 'overview') { renderOverviewTable(); renderActivityFeed(); }
+}
+
+// ═══════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+  if (id === 'add-wallet-modal') populateUserSelect();
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeBD(e, id) { if (e.target.classList.contains('overlay')) closeModal(id); }
+
+// ═══════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  const icons = { success:'✓', info:'ℹ', warn:'⚠', error:'⊗' };
+  t.querySelector('#toast-icon').textContent = icons[type] || '✓';
+  t.querySelector('#toast-msg').textContent = msg;
+  t.className = 'toast ' + type;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ═══════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════
+function avatarColors(id) {
+  const colors = [
+    ['#6366f1','#fff'],['#10b981','#fff'],['#f59e0b','#000'],
+    ['#ef4444','#fff'],['#8b5cf6','#fff'],['#06b6d4','#000']
+  ];
+  const i = parseInt(id.replace('u','')) % colors.length;
+  return colors[i];
+}
+function initials(u) { return (u.fname[0]+u.lname[0]).toUpperCase(); }
+function statusBadge(s) {
+  const map = { active:'badge-active Active', pending:'badge-pending Pending', suspended:'badge-suspended Suspended' };
+  const [cls, label] = (map[s] || 'badge-pending Pending').split(' ');
+  return `<span class="status-badge ${cls}">${label}</span>`;
+}
+function kycBadge(k) {
+  const map = {
+    verified: ['badge-active','✓ Verified'],
+    pending: ['badge-pending','⏳ Pending'],
+    rejected: ['badge-suspended','✕ Rejected'],
+    not_submitted: ['','— Not Submitted']
+  };
+  const [cls, label] = map[k] || ['','—'];
+  return `<span class="status-badge ${cls}" style="font-size:9px;">${label}</span>`;
+}
+function coinConfig(coin) {
+  const map = {
+    BTC: { icon:'₿', bg:'rgba(247,147,26,0.14)', price:67421 },
+    ETH: { icon:'Ξ', bg:'rgba(98,126,234,0.14)', price:3892 },
+    SOL: { icon:'◎', bg:'rgba(20,241,149,0.14)', price:189 },
+    USDC:{ icon:'◈', bg:'rgba(0,200,255,0.12)', price:1 },
+    BNB: { icon:'⬟', bg:'rgba(240,185,11,0.14)', price:572 },
+    XRP: { icon:'✦', bg:'rgba(0,162,255,0.12)', price:0.78 },
+    ADA: { icon:'✧', bg:'rgba(0,51,173,0.15)', price:0.56 },
+    DOGE:{ icon:'Ð', bg:'rgba(203,162,61,0.12)', price:0.18 },
+  };
+  return map[coin] || { icon:'⬡', bg:'rgba(99,102,241,0.12)', price:0 };
+}
+
+// ═══════════════════════════════════════
+// RENDER: OVERVIEW TABLE
+// ═══════════════════════════════════════
+function renderOverviewTable() {
+  const tbody = document.getElementById('overview-user-tbody');
+  tbody.innerHTML = DB.users.slice(0,5).map(u => {
+    const [bg, fg] = avatarColors(u.id);
+    const wCount = DB.wallets.filter(w=>w.userId===u.id).length;
+    return `<tr>
+      <td><div class="user-cell">
+        <div class="uav" style="background:${bg};color:${fg}">${initials(u)}</div>
+        <div><div class="uav-name">${u.fname} ${u.lname}</div><div class="uav-email">${u.email}</div></div>
+      </div></td>
+      <td>${statusBadge(u.status)}</td>
+      <td><span class="balance-mono">$${u.balance.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span></td>
+      <td><span class="vol-mono">${wCount} wallet${wCount!==1?'s':''}</span></td>
+      <td><span class="vol-mono">${u.joined}</span></td>
+      <td><div class="action-btns">
+        <button class="btn btn-ghost btn-xs" onclick="openUserModal('${u.id}')">View</button>
+        <button class="btn btn-primary btn-xs" onclick="openAddWalletForUserById('${u.id}')">+ Wallet</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+// RENDER: USER TABLE
+// ═══════════════════════════════════════
+function renderUserTable() {
+  const query = (document.getElementById('user-search')?.value || '').toLowerCase();
+  const tbody = document.getElementById('user-tbody');
+  let filtered = DB.users.filter(u => {
+    const matchFilter = userFilter === 'all' || u.status === userFilter;
+    const matchSearch = !query || (u.fname+u.lname+u.email).toLowerCase().includes(query);
+    return matchFilter && matchSearch;
+  });
+  tbody.innerHTML = filtered.map(u => {
+    const [bg, fg] = avatarColors(u.id);
+    const wCount = DB.wallets.filter(w=>w.userId===u.id).length;
+    return `<tr>
+      <td><div class="user-cell">
+        <div class="uav" style="background:${bg};color:${fg}">${initials(u)}</div>
+        <div><div class="uav-name">${u.fname} ${u.lname}</div><div class="uav-email">${u.email}</div></div>
+      </div></td>
+      <td>${statusBadge(u.status)}</td>
+      <td>${kycBadge(u.kyc)}</td>
+      <td><span class="balance-mono">$${u.balance.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span></td>
+      <td><span class="vol-mono">${wCount} wallet${wCount!==1?'s':''}</span></td>
+      <td><span class="vol-mono">${u.lastActive}</span></td>
+      <td><div class="action-btns">
+        <button class="btn btn-ghost btn-xs" onclick="openUserModal('${u.id}')">👁 View</button>
+        <button class="btn btn-primary btn-xs" onclick="openAddWalletForUserById('${u.id}')">⬡ Wallet</button>
+        <button class="btn btn-danger btn-xs" onclick="quickSuspend('${u.id}')">⊗</button>
+      </div></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;">No users found</td></tr>`;
+}
+
+function filterUsers(filter, el) {
+  userFilter = filter;
+  document.querySelectorAll('.ftab').forEach(f=>f.classList.remove('active'));
+  el.classList.add('active');
+  renderUserTable();
+}
+
+// ═══════════════════════════════════════
+// RENDER: WALLET TABLE
+// ═══════════════════════════════════════
+function renderWalletTable() {
+  const query = (document.getElementById('wallet-search')?.value || '').toLowerCase();
+  const list = document.getElementById('wallet-list');
+  const label = document.getElementById('wallet-count-label');
+  const filtered = DB.wallets.filter(w => {
+    if (!query) return true;
+    const u = DB.users.find(x=>x.id===w.userId);
+    return (u ? (u.fname+u.lname+u.email).toLowerCase() : '').includes(query) ||
+           w.address.toLowerCase().includes(query) || w.coin.toLowerCase().includes(query);
+  });
+  label.textContent = `${filtered.length} wallet${filtered.length!==1?'s':''}`;
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center;padding:28px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;">No wallets assigned yet. Click "Assign Wallet" to add one.</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(w => {
+    const u = DB.users.find(x=>x.id===w.userId);
+    const cf = coinConfig(w.coin);
+    const usdVal = (w.balance * cf.price).toLocaleString(undefined,{maximumFractionDigits:2});
+    return `<div class="wallet-item">
+      <div class="wicon" style="background:${cf.bg}">${cf.icon}</div>
+      <div class="winfo">
+        <div class="wname">${w.coin} — ${u ? u.fname+' '+u.lname : '?'}</div>
+        <div class="waddr">${w.address || 'No address set'}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;">${w.network} · ${w.notes||'—'}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="wbal">${w.balance} ${w.coin}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);">≈ $${usdVal}</div>
+      </div>
+      <div style="margin-left:12px;display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-xs" onclick="editWalletBalance('${w.id}')">Edit</button>
+        <button class="btn btn-danger btn-xs" onclick="removeWallet('${w.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+// RENDER: BUY LINKS
+// ═══════════════════════════════════════
+function renderBuyLinks() {
+  const list = document.getElementById('buy-links-list');
+  const label = document.getElementById('link-count-label');
+  label.textContent = `${DB.buyLinks.length} link${DB.buyLinks.length!==1?'s':''}`;
+  if (!DB.buyLinks.length) {
+    list.innerHTML = `<div style="text-align:center;padding:28px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;">No buy links added yet. Click "+ Add Link" to create one.</div>`;
+    return;
+  }
+  list.innerHTML = DB.buyLinks.map(l => `
+    <div class="link-row">
+      <div class="link-icon" style="background:rgba(99,102,241,0.1);font-size:20px;">${l.icon||'🔗'}</div>
+      <div class="link-info">
+        <div class="link-name">${l.name} <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);">${l.type} · ${l.fee||'—'}</span></div>
+        <div class="link-url ${l.url?'':'empty'}" onclick="window.open('${l.url}','_blank')">${l.url || 'No URL set'}</div>
+      </div>
+      <div class="link-actions">
+        <button class="btn btn-warn btn-xs" onclick="editBuyLink('${l.id}')">Edit</button>
+        <button class="btn btn-danger btn-xs" onclick="deleteBuyLink('${l.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
+// RENDER: ACTIVITY
+// ═══════════════════════════════════════
+function renderActivityFeed() {
+  const feed = document.getElementById('activity-feed');
+  if(!feed) return;
+  feed.innerHTML = DB.activityLog.slice(0,6).map(e => `
+    <div class="log-row">
+      <div class="log-dot" style="background:${e.color}"></div>
+      <div class="log-text">${e.user} — ${e.msg}<span>${e.time}</span></div>
+    </div>
+  `).join('');
+}
+
+function renderFullActivityLog() {
+  const log = document.getElementById('full-activity-log');
+  if(!log) return;
+  log.innerHTML = DB.activityLog.map(e => `
+    <div class="log-row">
+      <div class="log-dot" style="background:${e.color}"></div>
+      <div class="log-text">${e.user} — ${e.msg}<span>${e.time}</span></div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
+// RENDER: KYC
+// ═══════════════════════════════════════
+function renderKYC() {
+  const list = document.getElementById('kyc-list');
+  const pending = DB.users.filter(u => u.kyc === 'pending');
+  if (!pending.length) {
+    list.innerHTML = `<div style="text-align:center;padding:28px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;">✓ No pending KYC reviews</div>`;
+    return;
+  }
+  list.innerHTML = pending.map(u => {
+    const [bg,fg] = avatarColors(u.id);
+    return `<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;margin-bottom:12px;">
+      <div class="uav" style="background:${bg};color:${fg};width:42px;height:42px;font-size:14px;">${initials(u)}</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:700;">${u.fname} ${u.lname}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">${u.email} · Joined ${u.joined}</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-success btn-sm" onclick="approveKYC('${u.id}')">✓ Approve</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectKYC('${u.id}')">✕ Reject</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+// OPEN USER MODAL
+// ═══════════════════════════════════════
+function openUserModal(uid) {
+  const u = DB.users.find(x=>x.id===uid);
+  if (!u) return;
+  DB.currentUserId = uid;
+  const [bg,fg] = avatarColors(uid);
+
+  document.getElementById('vu-title').textContent = u.fname + ' ' + u.lname;
+  document.getElementById('vu-sub').textContent = '// ' + u.email + ' · ID: ' + uid;
+
+  document.getElementById('vu-strip').innerHTML = `
+    <div class="uav" style="background:${bg};color:${fg};width:46px;height:46px;font-size:15px;">${initials(u)}</div>
+    <div style="flex:1;">
+      <div style="font-size:15px;font-weight:800;">${u.fname} ${u.lname}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">${u.email}</div>
+    </div>
+    <div style="text-align:right;">
+      ${statusBadge(u.status)}
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--accent2);margin-top:4px;">${u.tier} · ${u.kyc}</div>
+    </div>
+  `;
+
+  // Profile tab
+  document.getElementById('vu-fname').value = u.fname;
+  document.getElementById('vu-lname').value = u.lname;
+  document.getElementById('vu-email').value = u.email;
+  document.getElementById('vu-status').value = u.status;
+  document.getElementById('vu-kyc').value = u.kyc;
+  document.getElementById('vu-tier').value = u.tier;
+
+  // Wallets tab
+  renderUserWallets(uid);
+
+  // Balance tab
+  const wals = DB.wallets.filter(w=>w.userId===uid);
+  const totalUSD = wals.reduce((s,w)=>s+(w.balance*(coinConfig(w.coin).price||0)),0);
+  document.getElementById('vu-balance-metrics').innerHTML = `
+    <div class="metric-mini"><div class="mm-label">USD Balance</div><div class="mm-val" style="color:var(--accent3)">$${u.balance.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>
+    <div class="metric-mini"><div class="mm-label">Crypto Value</div><div class="mm-val" style="color:var(--accent)">$${totalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>
+    <div class="metric-mini"><div class="mm-label">Wallets</div><div class="mm-val">${wals.length}</div></div>
+  `;
+
+  // Reset tabs
+  switchTab('vu', 'profile', document.querySelector('.tab-btn'));
+  openModal('view-user-modal');
+}
+
+function renderUserWallets(uid) {
+  const wals = DB.wallets.filter(w=>w.userId===uid);
+  const list = document.getElementById('vu-wallet-list');
+  if (!wals.length) {
+    list.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;">No wallets assigned to this user yet.</div>`;
+    return;
+  }
+  list.innerHTML = wals.map(w => {
+    const cf = coinConfig(w.coin);
+    const usd = (w.balance * cf.price).toLocaleString(undefined,{maximumFractionDigits:2});
+    return `<div class="wallet-item">
+      <div class="wicon" style="background:${cf.bg}">${cf.icon}</div>
+      <div class="winfo">
+        <div class="wname">${w.coin} <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);">${w.network}</span></div>
+        <div class="waddr">${w.address||'No address'}</div>
+      </div>
+      <div class="wbal" style="margin-right:10px;">${w.balance} ${w.coin}<br><span style="color:var(--muted);font-size:10px;">≈$${usd}</span></div>
+      <button class="btn btn-danger btn-xs" onclick="removeWallet('${w.id}');renderUserWallets('${uid}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function openAddWalletForUser() {
+  const uid = DB.currentUserId;
+  closeModal('view-user-modal');
+  openModal('add-wallet-modal');
+  setTimeout(() => {
+    const sel = document.getElementById('aw-user-select');
+    if (sel) sel.value = uid;
+  }, 100);
+}
+
+function openAddWalletForUserById(uid) {
+  openModal('add-wallet-modal');
+  setTimeout(() => {
+    const sel = document.getElementById('aw-user-select');
+    if (sel) sel.value = uid;
+  }, 100);
+}
+
+// ═══════════════════════════════════════
+// TAB SWITCHER
+// ═══════════════════════════════════════
+function switchTab(prefix, name, el) {
+  document.querySelectorAll(`.tab-pane[id^="${prefix}-tab-"]`).forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`${prefix}-tab-${name}`).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+// ═══════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════
+function populateUserSelect() {
+  const sel = document.getElementById('aw-user-select');
+  sel.innerHTML = DB.users.map(u => `<option value="${u.id}">${u.fname} ${u.lname} (${u.email})</option>`).join('');
+}
+
+function addUser() {
+  const fname = document.getElementById('nu-fname').value.trim();
+  const lname = document.getElementById('nu-lname').value.trim();
+  const email = document.getElementById('nu-email').value.trim();
+  const balance = parseFloat(document.getElementById('nu-balance').value) || 0;
+  const tier = document.getElementById('nu-tier').value;
+  const status = document.getElementById('nu-status').value;
+  const kyc = document.getElementById('nu-kyc').value;
+  if (!fname||!lname||!email) { showToast('Fill in name and email','error'); return; }
+  const users = NX.getUsers();
+  if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+    showToast('Email already exists','error'); return;
+  }
+  const id = 'u' + Date.now();
+  const now = new Date();
+  const joined = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  const newUser = { id, fname, lname, email, password: fname.toLowerCase() + '123', status, kyc, tier, balance, creditScore:30, giftApplied:false, joined, lastActive:'Now', wallets:[] };
+  users.push(newUser);
+  NX.setUsers(users);
+  document.getElementById('stat-total-users').textContent = NX.getUsers().length;
+  document.getElementById('users-count-badge').textContent = NX.getUsers().length;
+  addLog('admin', 'Admin', `Created account for ${fname} ${lname}`, 'var(--accent)');
+  closeModal('add-user-modal');
+  showToast(`✓ User ${fname} ${lname} created`, 'success');
+  renderOverviewTable();
+}
+
+function addWallet() {
+  const uid = document.getElementById('aw-user-select').value;
+  const coin = document.getElementById('aw-coin').value;
+  const balance = parseFloat(document.getElementById('aw-balance').value) || 0;
+  const address = document.getElementById('aw-address').value.trim();
+  const network = document.getElementById('aw-network').value;
+  const notes = document.getElementById('aw-notes').value.trim();
+  if (!uid) { showToast('Select a user','error'); return; }
+  if (!address) { showToast('Enter a wallet address','error'); return; }
+  const id = 'w' + Date.now();
+  const wallets = NX.getWallets();
+  wallets.push({ id, userId:uid, coin, balance, address, network, notes });
+  NX.setWallets(wallets);
+  const u = NX.getUser(uid);
+  addLog('wallet','Admin',`Assigned ${coin} wallet to ${u?u.fname+' '+u.lname:uid}`,'#a5b4fc');
+  closeModal('add-wallet-modal');
+  showToast(`✓ ${coin} wallet assigned to ${u?u.fname:'user'}`, 'success');
+  renderWalletTable();
+  renderOverviewTable();
+  if (DB.currentUserId === uid) renderUserWallets(uid);
+}
+
+function removeWallet(wid) {
+  const w = NX.getWallets().find(x=>x.id===wid);
+  if (!w) return;
+  const u = NX.getUser(w.userId);
+  NX.setWallets(NX.getWallets().filter(x=>x.id!==wid));
+  addLog('wallet','Admin',`Removed ${w.coin} wallet from ${u?u.fname+' '+u.lname:'user'}`,'var(--danger)');
+  showToast(`${w.coin} wallet removed`, 'warn');
+  renderWalletTable();
+  if (DB.currentUserId === w.userId) renderUserWallets(w.userId);
+}
+
+function editWalletBalance(wid) {
+  const wallets = NX.getWallets();
+  const w = wallets.find(x=>x.id===wid);
+  if (!w) return;
+  const val = prompt(`Edit ${w.coin} balance for wallet ${w.address.slice(0,12)}...`, w.balance);
+  if (val === null) return;
+  const num = parseFloat(val);
+  if (isNaN(num)) { showToast('Invalid amount','error'); return; }
+  w.balance = num;
+  NX.setWallets(wallets);
+  showToast(`✓ Balance updated to ${num} ${w.coin}`, 'success');
+  renderWalletTable();
+}
+
+function addBuyLink() {
+  const name = document.getElementById('nl-name').value.trim();
+  const url = document.getElementById('nl-url').value.trim();
+  const type = document.getElementById('nl-type').value;
+  const fee = document.getElementById('nl-fee').value.trim();
+  const icon = document.getElementById('nl-icon').value.trim() || '🔗';
+  if (!name||!url) { showToast('Name and URL are required','error'); return; }
+  const id = 'l' + Date.now();
+  const links = NX.getBuyLinks();
+  links.push({ id, name, url, type, fee, icon });
+  NX.setBuyLinks(links);
+  addLog('admin','Admin',`Added buy link: "${name}"`, 'var(--accent)');
+  closeModal('add-link-modal');
+  showToast(`✓ Link "${name}" saved`, 'success');
+  renderBuyLinks();
+  ['nl-name','nl-url','nl-fee','nl-icon'].forEach(id=>document.getElementById(id).value='');
+}
+
+function editBuyLink(lid) {
+  const links = NX.getBuyLinks();
+  const l = links.find(x=>x.id===lid);
+  if (!l) return;
+  const newUrl = prompt(`Edit URL for "${l.name}":`, l.url);
+  if (newUrl === null) return;
+  l.url = newUrl;
+  NX.setBuyLinks(links);
+  showToast(`✓ Link updated`, 'success');
+  renderBuyLinks();
+}
+
+function deleteBuyLink(lid) {
+  const links = NX.getBuyLinks();
+  const l = links.find(x=>x.id===lid);
+  NX.setBuyLinks(links.filter(x=>x.id!==lid));
+  showToast(`"${l?.name}" removed`, 'warn');
+  renderBuyLinks();
+}
+
+function saveUserProfile() {
+  const uid = DB.currentUserId;
+  const u = NX.getUser(uid);
+  if (!u) return;
+  NX.updateUser(uid, {
+    fname: document.getElementById('vu-fname').value,
+    lname: document.getElementById('vu-lname').value,
+    email: document.getElementById('vu-email').value,
+    status: document.getElementById('vu-status').value,
+    kyc: document.getElementById('vu-kyc').value,
+    tier: document.getElementById('vu-tier').value,
+  });
+  addLog('admin','Admin',`Updated profile for ${u.fname} ${u.lname}`,'var(--accent)');
+  showToast('✓ Profile saved', 'success');
+  renderUserTable(); renderOverviewTable();
+}
+
+function applyBalanceAdj() {
+  const uid = DB.currentUserId;
+  const u = NX.getUser(uid);
+  if (!u) return;
+  const coin = document.getElementById('adj-coin').value;
+  const amount = parseFloat(document.getElementById('adj-amount').value);
+  const op = document.getElementById('adj-op').value;
+  const note = document.getElementById('adj-note').value;
+  if (isNaN(amount)||amount<=0) { showToast('Enter a valid amount','error'); return; }
+  const wallets = NX.getWallets();
+  const w = wallets.find(x=>x.userId===uid && x.coin===coin);
+  const msg = `Manual ${op} of ${amount} ${coin} on ${u.fname} ${u.lname}${note?' — '+note:''}`;
+  if (w) {
+    if (op==='add') w.balance += amount;
+    else if (op==='subtract') w.balance = Math.max(0, w.balance - amount);
+    else w.balance = amount;
+    NX.setWallets(wallets);
+  } else {
+    const waddr = '0x' + Math.random().toString(16).slice(2,14).toUpperCase();
+    wallets.push({ id:'w'+Date.now(), userId:uid, coin, balance:amount, address:waddr, network:'Mainnet', notes:note||'Admin created' });
+    NX.setWallets(wallets);
+  }
+  addLog('admin','Admin', msg, 'var(--accent2)');
+  showToast(`✓ Balance adjusted: ${amount} ${coin}`, 'success');
+  renderUserWallets(uid); renderWalletTable();
+}
+
+function setUserStatus(status) {
+  const uid = DB.currentUserId;
+  const u = NX.getUser(uid);
+  if (!u) return;
+  NX.updateUser(uid, { status });
+  const colors = { active:'var(--accent3)', pending:'var(--accent2)', suspended:'var(--danger)' };
+  addLog('admin','Admin',`Set ${u.fname} ${u.lname} status to: ${status}`, colors[status]||'var(--muted)');
+  showToast(`✓ Status set to ${status}`, status==='suspended'?'warn':'success');
+  renderUserTable(); renderOverviewTable();
+}
+
+function quickSuspend(uid) {
+  const u = NX.getUser(uid);
+  if (!u) return;
+  const newStatus = u.status==='suspended' ? 'active' : 'suspended';
+  NX.updateUser(uid, { status: newStatus });
+  addLog('admin','Admin',`Toggled status of ${u.fname} ${u.lname} to ${newStatus}`,'var(--danger)');
+  showToast(`${u.fname} ${u.lname} → ${newStatus}`, newStatus==='suspended'?'warn':'success');
+  renderUserTable(); renderOverviewTable();
+}
+
+function resetPassword() {
+  const u = NX.getUser(DB.currentUserId);
+  if(!u) return;
+  addLog('admin','Admin',`Password reset sent to ${u.email}`,'var(--accent2)');
+  showToast('Password reset email sent', 'info');
+}
+
+function deleteUser() {
+  const uid = DB.currentUserId;
+  const u = NX.getUser(uid);
+  if (!u) return;
+  if (!confirm(`Delete ${u.fname} ${u.lname}? This cannot be undone.`)) return;
+  NX.setUsers(NX.getUsers().filter(x=>x.id!==uid));
+  NX.setWallets(NX.getWallets().filter(x=>x.userId!==uid));
+  addLog('admin','Admin',`Deleted account: ${u.fname} ${u.lname}`,'var(--danger)');
+  closeModal('view-user-modal');
+  showToast(`${u.fname} account deleted`, 'warn');
+  renderUserTable(); renderOverviewTable();
+  document.getElementById('stat-total-users').textContent = NX.getUsers().length;
+  document.getElementById('users-count-badge').textContent = NX.getUsers().length;
+}
+
+function approveKYC(uid) {
+  const u = NX.getUser(uid);
+  if (!u) return;
+  NX.updateUser(uid, { kyc:'verified' });
+  addLog('kyc','Admin',`KYC approved for ${u.fname} ${u.lname}`,'var(--accent3)');
+  showToast(`✓ KYC approved for ${u.fname}`, 'success');
+  renderKYC(); renderUserTable();
+}
+
+function rejectKYC(uid) {
+  const u = NX.getUser(uid);
+  if (!u) return;
+  NX.updateUser(uid, { kyc:'rejected' });
+  addLog('kyc','Admin',`KYC rejected for ${u.fname} ${u.lname}`,'var(--danger)');
+  showToast(`KYC rejected for ${u.fname}`, 'warn');
+  renderKYC(); renderUserTable();
+}
+
+
+function addLog(type, user, msg, color) {
+  NX.addLog(type, user, msg, color);
+  renderActivityFeed();
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+window.onload = () => {
+  // Update stat counts from live data
+  const users = NX.getUsers();
+  const statEl = document.getElementById('stat-total-users');
+  const badgeEl = document.getElementById('users-count-badge');
+  if (statEl) statEl.textContent = users.length;
+  if (badgeEl) badgeEl.textContent = users.length;
+
+  renderOverviewTable();
+  renderActivityFeed();
+};
+</script>
+</body>
+</html>

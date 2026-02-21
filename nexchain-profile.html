@@ -1,0 +1,2294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexChain — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b10;
+    --surface: #0d1117;
+    --surface2: #131920;
+    --surface3: #1a2230;
+    --border: rgba(0,255,163,0.10);
+    --border2: rgba(255,255,255,0.06);
+    --accent: #00ffa3;
+    --accent2: #00c8ff;
+    --accent3: #ff6b35;
+    --gold: #f0c040;
+    --text: #e8f0fe;
+    --muted: #5a6a7e;
+    --danger: #ff4466;
+    --success: #00ffa3;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* BG */
+  .bg-layer {
+    position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+  }
+  .bg-layer::before {
+    content: '';
+    position: absolute;
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(0,255,163,0.05) 0%, transparent 65%);
+    top: -200px; right: -200px;
+    animation: bgd 14s ease-in-out infinite alternate;
+  }
+  .bg-layer::after {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(0,200,255,0.04) 0%, transparent 65%);
+    bottom: 0; left: -100px;
+    animation: bgd2 10s ease-in-out infinite alternate;
+  }
+  @keyframes bgd { to { transform: translate(-60px, 60px); } }
+  @keyframes bgd2 { to { transform: translate(80px, -40px); } }
+  .grid-overlay {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: linear-gradient(rgba(0,255,163,0.025) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0,255,163,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  /* LAYOUT */
+  .shell { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+  /* SIDEBAR */
+  aside {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 0;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 24px 28px;
+    font-size: 20px; font-weight: 800; letter-spacing: -0.4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-icon {
+    width: 30px; height: 30px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+  .logo span { color: var(--accent); }
+
+  nav { padding: 20px 0; flex: 1; }
+
+  .nav-section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    padding: 0 24px 10px;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 24px;
+    font-size: 13px; font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 2px solid transparent;
+    text-decoration: none;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .nav-item.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: rgba(0,255,163,0.05);
+  }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-bottom {
+    padding: 20px 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .user-pill {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border-radius: 10px;
+    border: 1px solid var(--border2);
+    cursor: pointer;
+  }
+  .avatar {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; color: #080b10;
+    flex-shrink: 0;
+  }
+  .user-info { flex: 1; overflow: hidden; }
+  .user-name { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-tier {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; color: var(--gold);
+  }
+
+  /* MAIN */
+  main {
+    margin-left: 240px;
+    flex: 1;
+    padding: 40px 48px;
+    max-width: 1200px;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 36px;
+    animation: fadeUp 0.6s ease both;
+  }
+  .page-title {
+    font-size: 26px; font-weight: 800; letter-spacing: -0.5px;
+  }
+  .page-title span { color: var(--accent); }
+  .topbar-right {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .chip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.4)} }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* BALANCE HERO CARD */
+  .balance-card {
+    background: linear-gradient(135deg, #0d1a12 0%, #0d1420 100%);
+    border: 1px solid rgba(0,255,163,0.15);
+    border-radius: 20px;
+    padding: 36px 40px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+  .balance-card::before {
+    content: '';
+    position: absolute;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(0,255,163,0.08) 0%, transparent 70%);
+    top: -80px; right: -80px;
+    pointer-events: none;
+  }
+  .balance-card::after {
+    content: '⬡';
+    position: absolute;
+    font-size: 200px;
+    color: rgba(0,255,163,0.025);
+    right: -20px; bottom: -60px;
+    pointer-events: none;
+  }
+
+  .balance-top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .balance-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .balance-amount {
+    font-size: 52px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1;
+    color: var(--text);
+  }
+  .balance-amount .currency { font-size: 24px; color: var(--muted); margin-right: 4px; }
+  .balance-change {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    background: rgba(0,255,163,0.1);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  .balance-actions { display: flex; gap: 12px; align-items: center; }
+
+  .action-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+  .btn-green {
+    background: var(--accent);
+    color: #080b10;
+  }
+  .btn-green:hover {
+    background: #00cc82;
+    box-shadow: 0 8px 24px rgba(0,255,163,0.3);
+    transform: translateY(-1px);
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover {
+    border-color: rgba(0,200,255,0.4);
+    color: var(--accent2);
+    transform: translateY(-1px);
+  }
+  .btn-orange {
+    background: transparent;
+    border: 1px solid rgba(255,107,53,0.4);
+    color: var(--accent3);
+  }
+  .btn-orange:hover {
+    background: rgba(255,107,53,0.1);
+    transform: translateY(-1px);
+  }
+
+  .balance-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .bstat {
+    background: rgba(13,17,23,0.8);
+    padding: 16px 20px;
+  }
+  .bstat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .bstat-val {
+    font-size: 16px; font-weight: 700;
+    color: var(--text);
+  }
+  .bstat-val.green { color: var(--accent); }
+  .bstat-val.red { color: var(--danger); }
+
+  /* GRID LAYOUT */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  /* PORTFOLIO */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-title {
+    font-size: 15px; font-weight: 700; letter-spacing: -0.2px;
+  }
+  .card-action {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: none;
+    background: none; border: none;
+    transition: opacity 0.2s;
+  }
+  .card-action:hover { opacity: 0.7; }
+
+  .asset-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border2);
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  .asset-row:hover { background: rgba(255,255,255,0.02); }
+  .asset-row:last-child { border-bottom: none; }
+
+  .coin-icon {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .asset-info { flex: 1; }
+  .asset-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .asset-sym {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; color: var(--muted);
+  }
+  .asset-right { text-align: right; }
+  .asset-val { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .asset-chg {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+  }
+  .asset-chg.up { color: var(--accent); }
+  .asset-chg.dn { color: var(--danger); }
+  .asset-bar-wrap {
+    width: 60px;
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-left: auto;
+    margin-right: 16px;
+  }
+  .asset-bar { height: 100%; border-radius: 2px; }
+
+  /* RIGHT PANEL */
+  .right-panel { display: flex; flex-direction: column; gap: 20px; }
+
+  /* TXN History */
+  .txn-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--border2);
+  }
+  .txn-row:last-child { border-bottom: none; }
+  .txn-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+  }
+  .txn-info { flex: 1; }
+  .txn-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .txn-date { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
+  .txn-val { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 600; }
+  .txn-val.credit { color: var(--accent); }
+  .txn-val.debit { color: var(--danger); }
+
+  /* MODAL OVERLAY */
+  .overlay {
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(8,11,16,0.85);
+    backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(30px) scale(0.97);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+  }
+  .overlay.open .modal { transform: translateY(0) scale(1); }
+
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0;
+    background: var(--surface);
+    z-index: 10;
+    border-radius: 20px 20px 0 0;
+  }
+  .modal-title { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+  .modal-subtitle {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; color: var(--muted); margin-top: 2px;
+  }
+  .close-btn {
+    width: 32px; height: 32px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; color: var(--muted);
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .close-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+  .modal-body { padding: 24px 28px; }
+
+  /* FORM STYLES */
+  .form-group { margin-bottom: 18px; }
+  .form-label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .form-input, .form-select {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 9px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: rgba(0,255,163,0.4);
+    box-shadow: 0 0 0 3px rgba(0,255,163,0.06);
+  }
+  .form-input::placeholder { color: var(--muted); opacity: 0.5; }
+  .form-select option { background: var(--surface2); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .input-with-badge {
+    position: relative;
+  }
+  .input-badge {
+    position: absolute;
+    right: 12px; top: 50%; transform: translateY(-50%);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(0,255,163,0.1);
+    padding: 3px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+  }
+
+  .rate-display {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px;
+    background: rgba(0,255,163,0.05);
+    border: 1px solid rgba(0,255,163,0.15);
+    border-radius: 9px;
+    margin-bottom: 18px;
+  }
+  .rate-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+  .rate-val { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--accent); font-weight: 600; }
+
+  .form-divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 22px 0;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+  .form-divider::before, .form-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .form-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px; font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.2px;
+  }
+  .form-btn-green {
+    background: var(--accent);
+    color: #080b10;
+  }
+  .form-btn-green:hover {
+    background: #00cc82;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px rgba(0,255,163,0.3);
+  }
+  .form-btn-blue {
+    background: linear-gradient(135deg, var(--accent2), #0080cc);
+    color: #fff;
+  }
+  .form-btn-blue:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px rgba(0,200,255,0.25);
+  }
+
+  /* CONVERT STEPS */
+  .step-indicator {
+    display: flex; gap: 6px; margin-bottom: 24px;
+  }
+  .step {
+    flex: 1; height: 3px; border-radius: 2px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .step.done { background: var(--accent); }
+  .step.active { background: rgba(0,255,163,0.5); }
+
+  .convert-arrow {
+    display: flex; align-items: center; justify-content: center;
+    height: 36px;
+    color: var(--muted);
+    font-size: 20px;
+    margin: -6px 0;
+    position: relative;
+    z-index: 1;
+  }
+  .swap-icon {
+    width: 32px; height: 32px;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .swap-icon:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* BUY MODAL EXTERNAL LINK */
+  .buy-options {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .buy-option {
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.2s;
+  }
+  .buy-option:hover {
+    border-color: rgba(0,255,163,0.3);
+    background: rgba(0,255,163,0.04);
+    transform: translateX(4px);
+  }
+  .buy-option-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .buy-option-info { flex: 1; }
+  .buy-option-name { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .buy-option-desc { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+  .buy-option-arrow { color: var(--muted); font-size: 18px; }
+  .buy-link-input-wrap { margin-top: 20px; }
+  .custom-link-note {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    margin-top: 8px; line-height: 1.5;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed; top: 24px; right: 24px; z-index: 9999;
+    padding: 14px 20px;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px; color: var(--accent);
+    transform: translateX(150%);
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    display: flex; align-items: center; gap: 10px;
+    max-width: 320px;
+  }
+  .toast.show { transform: translateX(0); }
+  .toast.error { border-color: var(--danger); color: var(--danger); }
+
+  /* BANK SECTION */
+  .bank-saved {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .bank-icon {
+    width: 36px; height: 36px;
+    background: rgba(0,255,163,0.1);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+  }
+  .bank-details { flex: 1; }
+  .bank-name { font-size: 13px; font-weight: 700; }
+  .bank-acc { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+  .bank-verified {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; color: var(--accent);
+    background: rgba(0,255,163,0.1);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  .info-box {
+    background: rgba(0,200,255,0.06);
+    border: 1px solid rgba(0,200,255,0.15);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; color: var(--accent2);
+    line-height: 1.6;
+    margin-bottom: 18px;
+    display: flex; gap: 10px;
+  }
+
+  .convert-summary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 18px;
+  }
+  .summary-row {
+    display: flex; justify-content: space-between;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 5px 0;
+    color: var(--muted);
+  }
+  .summary-row span:last-child { color: var(--text); }
+  .summary-row.total {
+    border-top: 1px solid var(--border);
+    margin-top: 8px; padding-top: 12px;
+    font-size: 14px; font-weight: 600;
+    color: var(--text);
+  }
+  .summary-row.total span:last-child { color: var(--accent); }
+
+  /* ── GIFT BANNER ── */
+  .gift-banner {
+    position: relative;
+    background: linear-gradient(135deg, #0d1a10 0%, #0e1620 50%, #150e20 100%);
+    border: 1px solid rgba(240,192,64,0.25);
+    border-radius: 20px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    overflow: hidden;
+    animation: fadeUp 0.6s 0.15s ease both;
+  }
+  .gift-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 80% 50%, rgba(240,192,64,0.07) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .gift-glow-orb {
+    position: absolute;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(240,192,64,0.12) 0%, transparent 70%);
+    right: -40px; top: -60px;
+    pointer-events: none;
+  }
+  .gift-ribbon {
+    position: absolute;
+    top: 0; right: 0;
+    background: linear-gradient(135deg, var(--gold), #e09000);
+    color: #000;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 1px;
+    padding: 6px 18px 6px 28px;
+    clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%);
+  }
+  .gift-inner { display: flex; align-items: center; gap: 28px; position: relative; z-index: 1; }
+  .gift-icon-wrap {
+    position: relative; flex-shrink: 0;
+  }
+  .gift-icon-bg {
+    width: 72px; height: 72px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(240,192,64,0.2), rgba(224,144,0,0.15));
+    border: 1px solid rgba(240,192,64,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 34px;
+    box-shadow: 0 0 30px rgba(240,192,64,0.15);
+  }
+  .gift-pulse {
+    position: absolute; inset: -4px;
+    border-radius: 22px;
+    border: 1px solid rgba(240,192,64,0.3);
+    animation: giftPulse 2.5s ease infinite;
+  }
+  @keyframes giftPulse {
+    0%,100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 0; transform: scale(1.12); }
+  }
+  .gift-text { flex: 1; }
+  .gift-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: 2px; color: var(--gold);
+    margin-bottom: 6px; opacity: 0.8;
+  }
+  .gift-amount {
+    font-size: 38px; font-weight: 800;
+    letter-spacing: -1.5px;
+    background: linear-gradient(90deg, var(--gold), #ffe08a);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1; margin-bottom: 8px;
+  }
+  .gift-desc {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; color: var(--muted);
+    line-height: 1.6; max-width: 380px;
+  }
+  .gift-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .btn-gift-apply {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px;
+    background: linear-gradient(135deg, var(--gold), #e09000);
+    color: #000; font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 800;
+    border: none; border-radius: 10px; cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 6px 20px rgba(240,192,64,0.25);
+  }
+  .btn-gift-apply:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(240,192,64,0.4);
+  }
+  .btn-credit-buy {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px;
+    background: transparent;
+    border: 1px solid rgba(240,192,64,0.35);
+    color: var(--gold); font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 700;
+    border-radius: 10px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-credit-buy:hover {
+    background: rgba(240,192,64,0.08);
+    border-color: rgba(240,192,64,0.6);
+    transform: translateY(-2px);
+  }
+  .gift-credit-row {
+    display: flex; align-items: center; gap: 20px;
+    margin-top: 20px; flex-wrap: wrap;
+  }
+  .credit-score-wrap { display: flex; align-items: center; gap: 12px; }
+  .credit-ring {
+    position: relative; width: 56px; height: 56px; flex-shrink: 0;
+  }
+  .credit-ring svg { transform: rotate(-90deg); }
+  .credit-ring-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 4; }
+  .credit-ring-fill {
+    fill: none; stroke: var(--gold); stroke-width: 4;
+    stroke-linecap: round;
+    stroke-dasharray: 138;
+    stroke-dashoffset: 97;
+    transition: stroke-dashoffset 1s ease;
+  }
+  .credit-ring-label {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    font-weight: 700; color: var(--gold);
+  }
+  .credit-text-info {}
+  .credit-score-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+  .credit-score-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; color: var(--muted);
+  }
+  .credit-bar-track {
+    flex: 1; min-width: 120px;
+    height: 6px; background: rgba(255,255,255,0.06);
+    border-radius: 3px; overflow: hidden;
+  }
+  .credit-bar-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--gold), #ffe08a);
+    width: 30%;
+    transition: width 1s ease;
+  }
+  .gift-status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 20px;
+    font-family: 'DM Mono', monospace; font-size: 10px;
+  }
+  .gift-status-badge.pending {
+    background: rgba(240,192,64,0.1);
+    border: 1px solid rgba(240,192,64,0.25);
+    color: var(--gold);
+  }
+  .gift-status-badge.eligible {
+    background: rgba(0,255,163,0.1);
+    border: 1px solid rgba(0,255,163,0.25);
+    color: var(--accent);
+  }
+
+  /* ── NOTIFICATION BANNER ── */
+  .notif-bar {
+    display: none;
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    z-index: 9998;
+    background: var(--surface);
+    border: 1px solid var(--gold);
+    border-radius: 16px;
+    padding: 18px 24px;
+    width: 90%; max-width: 520px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 40px rgba(240,192,64,0.1);
+    animation: slideUp 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  .notif-bar.visible { display: block; }
+  @keyframes slideUp { from { opacity:0; transform:translateX(-50%) translateY(30px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+  .notif-bar-header { display: flex; align-items: flex-start; gap: 14px; }
+  .notif-bar-icon {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(240,192,64,0.2), rgba(224,144,0,0.15));
+    border: 1px solid rgba(240,192,64,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .notif-bar-title { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+  .notif-bar-body {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; color: var(--muted); line-height: 1.6;
+  }
+  .notif-bar-body strong { color: var(--gold); }
+  .notif-bar-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .notif-close {
+    position: absolute; top: 12px; right: 14px;
+    background: none; border: none; color: var(--muted);
+    font-size: 16px; cursor: pointer; transition: color 0.2s;
+  }
+  .notif-close:hover { color: var(--text); }
+  .notif-steps {
+    display: flex; gap: 8px; margin-top: 14px;
+  }
+  .notif-step {
+    flex: 1; padding: 10px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 9px;
+    text-align: center;
+  }
+  .notif-step-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(240,192,64,0.15);
+    border: 1px solid rgba(240,192,64,0.3);
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 6px;
+  }
+  .notif-step-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; color: var(--muted); line-height: 1.4;
+  }
+
+  /* ── CREDIT BOOST MODAL ── */
+  .credit-modal-amount {
+    text-align: center;
+    padding: 24px 0 16px;
+  }
+  .cma-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--muted); margin-bottom: 8px;
+  }
+  .cma-value {
+    font-size: 48px; font-weight: 800; letter-spacing: -2px;
+    background: linear-gradient(90deg, var(--gold), #ffe08a);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .cma-sub { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .credit-boost-steps {
+    display: flex; flex-direction: column; gap: 10px; margin: 18px 0;
+  }
+  .cbs-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+  }
+  .cbs-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(240,192,64,0.12);
+    border: 1px solid rgba(240,192,64,0.3);
+    color: var(--gold);
+    font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .cbs-text { font-size: 13px; font-weight: 600; }
+  .cbs-sub { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .btn-form-gold {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, var(--gold), #e09000);
+    color: #000; border: none; border-radius: 10px;
+    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800;
+    cursor: pointer; transition: all 0.2s; margin-top: 4px;
+  }
+  .btn-form-gold:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px rgba(240,192,64,0.35);
+  }
+  .progress-step-row {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 14px;
+  }
+  .progress-step-label {
+    font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted);
+  }
+  .progress-step-val {
+    font-family: 'DM Mono', monospace; font-size: 11px; color: var(--gold);
+  }
+  .progress-track {
+    height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; margin-bottom: 20px;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--gold), #ffe08a);
+    transition: width 0.8s ease;
+  }
+
+  /* Mobile */
+  @media (max-width: 1000px) {
+    aside { width: 60px; }
+    .logo-text, .nav-label, .user-info, .nav-section-label { display: none; }
+    .logo { padding: 0 14px 20px; justify-content: center; }
+    .nav-item { padding: 12px; justify-content: center; }
+    .nav-icon { width: auto; }
+    main { margin-left: 60px; padding: 24px 20px; }
+    .main-grid { grid-template-columns: 1fr; }
+    .balance-stats { grid-template-columns: 1fr 1fr; }
+    .balance-amount { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+<div class="bg-layer"></div>
+<div class="grid-overlay"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span>✓</span><span id="toast-msg">Action complete</span>
+</div>
+
+<!-- SHELL -->
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="logo">
+      <div class="logo-icon">⬡</div>
+      <span class="logo-text">Nex<span>Chain</span></span>
+    </div>
+    <nav>
+      <div class="nav-section-label">Main</div>
+      <a class="nav-item active" href="#">
+        <span class="nav-icon">◈</span>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon">⬡</span>
+        <span class="nav-label">Portfolio</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon">⇄</span>
+        <span class="nav-label">Trade</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon">↯</span>
+        <span class="nav-label">Earn</span>
+      </a>
+      <div class="nav-section-label" style="margin-top:16px;">Account</div>
+      <a class="nav-item" href="#">
+        <span class="nav-icon">⊞</span>
+        <span class="nav-label">Transactions</span>
+      </a>
+      <a class="nav-item" href="#" onclick="openModal('bank-modal'); return false;">
+        <span class="nav-icon">⊟</span>
+        <span class="nav-label">Bank Details</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon">◎</span>
+        <span class="nav-label">Security</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon">⚙</span>
+        <span class="nav-label">Settings</span>
+      </a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="user-pill">
+        <div class="avatar" id="sidebar-avatar">SN</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Satoshi N.</div>
+          <div class="user-tier" id="sidebar-tier">★ Pro Member</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main>
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div>
+        <div class="page-title">Good morning, <span id="user-greeting">Satoshi</span> 👋</div>
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);margin-top:4px;">Friday, Feb 20, 2026</div>
+      </div>
+      <div class="topbar-right">
+        <div class="chip"><span class="live-dot"></span> Live prices</div>
+        <div class="chip" style="cursor:pointer;" onclick="openModal('bank-modal')">🏦 Bank Details</div>
+        <div class="chip" style="cursor:pointer;border-color:rgba(99,102,241,0.3);color:#a5b4fc;" onclick="window.location.href='nexchain-admin.html'">⬡ Admin</div>
+        <div class="chip" style="cursor:pointer;border-color:rgba(255,68,102,0.25);color:var(--danger);" onclick="logout()">⏻ Logout</div>
+      </div>
+    </div>
+
+    <!-- BALANCE CARD -->
+    <div class="balance-card">
+      <div class="balance-top">
+        <div>
+          <div class="balance-label">Total Portfolio Value</div>
+          <div class="balance-amount"><span class="currency">$</span><span id="total-balance">24,817</span><span id="balance-decimal" style="font-size:28px;color:var(--muted)">.52</span></div>
+          <div class="balance-change">▲ +$1,240.80 (5.26%) today</div>
+        </div>
+        <div class="balance-actions">
+          <button class="action-btn btn-green" onclick="openModal('buy-modal')">
+            ＋ Buy Crypto
+          </button>
+          <button class="action-btn btn-outline" onclick="openModal('convert-modal')">
+            ⇄ Convert
+          </button>
+          <button class="action-btn btn-orange" onclick="openModal('bank-modal')">
+            🏦 Withdraw
+          </button>
+        </div>
+      </div>
+      <div class="balance-stats">
+        <div class="bstat">
+          <div class="bstat-label">BTC Holdings</div>
+          <div class="bstat-val">0.2841 BTC</div>
+        </div>
+        <div class="bstat">
+          <div class="bstat-label">ETH Holdings</div>
+          <div class="bstat-val">3.142 ETH</div>
+        </div>
+        <div class="bstat">
+          <div class="bstat-label">Total P&L</div>
+          <div class="bstat-val green">+$4,302.11</div>
+        </div>
+        <div class="bstat">
+          <div class="bstat-label">Pending Convert</div>
+          <div class="bstat-val" style="color:var(--gold)">$0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GIFT BANNER -->
+    <div class="gift-banner" id="gift-banner">
+      <div class="gift-glow-orb"></div>
+      <div class="gift-ribbon">LIMITED OFFER</div>
+      <div class="gift-inner">
+        <div class="gift-icon-wrap">
+          <div class="gift-icon-bg">🎁</div>
+          <div class="gift-pulse"></div>
+        </div>
+        <div class="gift-text">
+          <div class="gift-label">Exclusive Member Gift</div>
+          <div class="gift-amount">$5,000.00</div>
+          <div class="gift-desc">You've been selected for a <strong style="color:var(--gold)">$5,000 crypto gift</strong>. Boost your profile credit score to qualify and claim your reward directly to your wallet.</div>
+
+          <!-- Credit Score Row -->
+          <div class="gift-credit-row">
+            <div class="credit-score-wrap">
+              <div class="credit-ring">
+                <svg width="56" height="56" viewBox="0 0 56 56">
+                  <circle class="credit-ring-bg" cx="28" cy="28" r="22"/>
+                  <circle class="credit-ring-fill" id="credit-ring-arc" cx="28" cy="28" r="22"/>
+                </svg>
+                <div class="credit-ring-label" id="credit-score-label">30%</div>
+              </div>
+              <div class="credit-text-info">
+                <div class="credit-score-title">Credit Score</div>
+                <div class="credit-score-sub" id="credit-status-text">Needs boost to qualify</div>
+              </div>
+            </div>
+            <div class="credit-bar-track" style="flex:1;">
+              <div class="credit-bar-fill" id="credit-bar" style="width:30%"></div>
+            </div>
+            <div class="gift-status-badge pending" id="gift-status-badge">⏳ Pending</div>
+          </div>
+
+          <div class="gift-actions">
+            <button class="btn-gift-apply" id="apply-gift-btn" onclick="applyForGift()">
+              🎁 Apply for $5,000 Gift
+            </button>
+            <button class="btn-credit-buy" onclick="openCreditBoostModal()">
+              ⚡ Buy Crypto to Boost Score
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="main-grid">
+      <!-- LEFT: PORTFOLIO -->
+      <div>
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header">
+            <div class="card-title">My Wallets</div>
+            <button class="card-action">View All →</button>
+          </div>
+          <div id="user-wallets-list">
+            <div class="asset-row">
+              <div class="coin-icon" style="background:rgba(247,147,26,0.12)">₿</div>
+              <div class="asset-info">
+                <div class="asset-name">Bitcoin</div>
+                <div class="asset-sym">BTC · 0.2841</div>
+              </div>
+              <div class="asset-bar-wrap"><div class="asset-bar" style="width:72%;background:var(--gold)"></div></div>
+              <div class="asset-right">
+                <div class="asset-val">$19,143.28</div>
+                <div class="asset-chg up">▲ +2.41%</div>
+              </div>
+            </div>
+            <div class="asset-row">
+              <div class="coin-icon" style="background:rgba(98,126,234,0.12)">Ξ</div>
+              <div class="asset-info">
+                <div class="asset-name">Ethereum</div>
+                <div class="asset-sym">ETH · 3.142</div>
+              </div>
+              <div class="asset-bar-wrap"><div class="asset-bar" style="width:20%;background:#627eea"></div></div>
+              <div class="asset-right">
+                <div class="asset-val">$4,893.12</div>
+                <div class="asset-chg up">▲ +1.87%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- QUICK ACTIONS CARD -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Quick Actions</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:none">
+            <div style="padding:20px 20px;text-align:center;cursor:pointer;border-right:1px solid var(--border2);transition:background .2s;" onmouseenter="this.style.background='rgba(0,255,163,0.04)'" onmouseleave="this.style.background=''" onclick="openModal('buy-modal')">
+              <div style="font-size:28px;margin-bottom:8px;">＋</div>
+              <div style="font-size:13px;font-weight:700;">Buy</div>
+              <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;">Add crypto</div>
+            </div>
+            <div style="padding:20px 20px;text-align:center;cursor:pointer;border-right:1px solid var(--border2);transition:background .2s;" onmouseenter="this.style.background='rgba(0,200,255,0.04)'" onmouseleave="this.style.background=''" onclick="openModal('convert-modal')">
+              <div style="font-size:28px;margin-bottom:8px;">⇄</div>
+              <div style="font-size:13px;font-weight:700;">Convert</div>
+              <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;">To fiat currency</div>
+            </div>
+            <div style="padding:20px 20px;text-align:center;cursor:pointer;transition:background .2s;" onmouseenter="this.style.background='rgba(255,107,53,0.04)'" onmouseleave="this.style.background=''" onclick="openModal('bank-modal')">
+              <div style="font-size:28px;margin-bottom:8px;">🏦</div>
+              <div style="font-size:13px;font-weight:700;">Withdraw</div>
+              <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;">To bank account</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="right-panel">
+        <!-- Profile Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Profile</div>
+            <button class="card-action">Edit →</button>
+          </div>
+          <div style="padding:20px 24px;display:flex;align-items:center;gap:16px;">
+            <div id="profile-avatar" style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#080b10;flex-shrink:0;">SN</div>
+            <div>
+              <div id="profile-fullname" style="font-size:17px;font-weight:800;margin-bottom:4px;">Satoshi Nakamoto</div>
+              <div id="profile-email" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">satoshi@nexchain.io</div>
+              <div id="profile-tier" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gold);margin-top:4px;">★ Pro Member · KYC Verified ✓</div>
+            </div>
+          </div>
+          <div style="margin:0 20px 16px;padding:12px 16px;background:rgba(0,255,163,0.05);border:1px solid rgba(0,255,163,0.12);border-radius:9px;font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);display:flex;align-items:center;gap:8px;">
+            <span>🛡</span> 2FA Enabled · Last login: Today, 09:14 AM
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Recent Transactions</div>
+            <button class="card-action">View All →</button>
+          </div>
+          <div class="txn-row">
+            <div class="txn-icon" style="background:rgba(0,255,163,0.1)">▲</div>
+            <div class="txn-info">
+              <div class="txn-name">Bought BTC</div>
+              <div class="txn-date">Today · 09:14 AM</div>
+            </div>
+            <div class="txn-val credit">+0.021 BTC</div>
+          </div>
+          <div class="txn-row">
+            <div class="txn-icon" style="background:rgba(0,200,255,0.1)">⇄</div>
+            <div class="txn-info">
+              <div class="txn-name">ETH → USD</div>
+              <div class="txn-date">Yesterday · 3:42 PM</div>
+            </div>
+            <div class="txn-val credit">+$780.00</div>
+          </div>
+          <div class="txn-row">
+            <div class="txn-icon" style="background:rgba(255,68,102,0.1)">▼</div>
+            <div class="txn-info">
+              <div class="txn-name">Withdrew to Bank</div>
+              <div class="txn-date">Feb 18 · 11:30 AM</div>
+            </div>
+            <div class="txn-val debit">-$500.00</div>
+          </div>
+          <div class="txn-row">
+            <div class="txn-icon" style="background:rgba(240,192,64,0.1)">★</div>
+            <div class="txn-info">
+              <div class="txn-name">Staking Reward</div>
+              <div class="txn-date">Feb 17 · Auto</div>
+            </div>
+            <div class="txn-val credit">+$12.40</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  MODAL: BUY CRYPTO                     -->
+<!-- ═══════════════════════════════════════ -->
+<div class="overlay" id="buy-modal" onclick="closeOnBackdrop(event,'buy-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Buy Crypto</div>
+        <div class="modal-subtitle">// Top up your NexChain balance</div>
+      </div>
+      <div class="close-btn" onclick="closeModal('buy-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="info-box">
+        <span>ℹ</span>
+        <span>Choose your preferred provider to purchase crypto. Funds will be credited to your NexChain wallet within minutes.</span>
+      </div>
+      <div class="buy-options">
+        <a class="buy-option" href="#" id="buy-link-1" target="_blank" onclick="handleBuyClick(event,'buy-link-1')">
+          <div class="buy-option-icon" style="background:rgba(247,147,26,0.12)">💳</div>
+          <div class="buy-option-info">
+            <div class="buy-option-name">Buy with Card</div>
+            <div class="buy-option-desc">Visa, Mastercard · Instant · 1.9% fee</div>
+          </div>
+          <div class="buy-option-arrow">›</div>
+        </a>
+        <a class="buy-option" href="#" id="buy-link-2" target="_blank" onclick="handleBuyClick(event,'buy-link-2')">
+          <div class="buy-option-icon" style="background:rgba(0,200,255,0.1)">🏦</div>
+          <div class="buy-option-info">
+            <div class="buy-option-name">Bank Transfer</div>
+            <div class="buy-option-desc">Wire / ACH · 0% fee · 1-2 business days</div>
+          </div>
+          <div class="buy-option-arrow">›</div>
+        </a>
+        <a class="buy-option" href="#" id="buy-link-3" target="_blank" onclick="handleBuyClick(event,'buy-link-3')">
+          <div class="buy-option-icon" style="background:rgba(0,255,163,0.08)">⚡</div>
+          <div class="buy-option-info">
+            <div class="buy-option-name">P2P / Peer Exchange</div>
+            <div class="buy-option-desc">Direct trade · Negotiable rates</div>
+          </div>
+          <div class="buy-option-arrow">›</div>
+        </a>
+      </div>
+
+      <div class="form-divider">Admin: Set Purchase Links</div>
+
+      <div class="form-group buy-link-input-wrap">
+        <label class="form-label">Card Purchase URL</label>
+        <input class="form-input" type="url" placeholder="https://yourprovider.com/buy?ref=nexchain" id="admin-link-1">
+      </div>
+      <div class="form-group buy-link-input-wrap">
+        <label class="form-label">Bank Transfer URL</label>
+        <input class="form-input" type="url" placeholder="https://yourprovider.com/bank" id="admin-link-2">
+      </div>
+      <div class="form-group buy-link-input-wrap">
+        <label class="form-label">P2P Exchange URL</label>
+        <input class="form-input" type="url" placeholder="https://yourprovider.com/p2p" id="admin-link-3">
+      </div>
+      <div class="custom-link-note">💡 Admin: paste your exchange affiliate or direct purchase links above. Users will be redirected when clicking each option.</div>
+      <button class="form-btn form-btn-green" style="margin-top:16px;" onclick="saveBuyLinks()">Save Purchase Links</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  MODAL: CONVERT CRYPTO                 -->
+<!-- ═══════════════════════════════════════ -->
+<div class="overlay" id="convert-modal" onclick="closeOnBackdrop(event,'convert-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Convert to Currency</div>
+        <div class="modal-subtitle">// Exchange crypto for fiat</div>
+      </div>
+      <div class="close-btn" onclick="closeModal('convert-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+
+      <div class="step-indicator">
+        <div class="step done" id="cstep1"></div>
+        <div class="step active" id="cstep2"></div>
+        <div class="step" id="cstep3"></div>
+      </div>
+
+      <!-- STEP 1: Amount -->
+      <div id="convert-step-1">
+        <div class="form-group">
+          <label class="form-label">You're Converting</label>
+          <div class="input-with-badge">
+            <input class="form-input" type="number" placeholder="0.00" id="convert-from-amount" style="padding-right:60px;" oninput="updateConvertRate()">
+            <span class="input-badge" id="from-badge">BTC</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Crypto Asset</label>
+          <select class="form-select" id="convert-from-coin" onchange="updateConvertRate()">
+            <option value="BTC" data-rate="67421">Bitcoin (BTC) — 0.2841 available</option>
+            <option value="ETH" data-rate="3892">Ethereum (ETH) — 3.142 available</option>
+            <option value="SOL" data-rate="189">Solana (SOL) — 2.80 available</option>
+            <option value="USDC" data-rate="1">USD Coin (USDC) — 250.69 available</option>
+          </select>
+        </div>
+
+        <div class="convert-arrow"><div class="swap-icon" onclick="void 0">⇅</div></div>
+
+        <div class="form-group">
+          <label class="form-label">You Will Receive (est.)</label>
+          <div class="input-with-badge">
+            <input class="form-input" type="text" id="convert-to-amount" placeholder="0.00" readonly style="padding-right:60px;color:var(--accent);">
+            <span class="input-badge" id="to-badge" style="color:var(--accent2)">USD</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Convert To Currency</label>
+          <select class="form-select" id="convert-to-currency" onchange="updateConvertRate()">
+            <option value="USD" data-sym="$">🇺🇸 US Dollar (USD)</option>
+            <option value="EUR" data-sym="€">🇪🇺 Euro (EUR)</option>
+            <option value="GBP" data-sym="£">🇬🇧 British Pound (GBP)</option>
+            <option value="NGN" data-sym="₦">🇳🇬 Nigerian Naira (NGN)</option>
+            <option value="GHS" data-sym="₵">🇬🇭 Ghanaian Cedi (GHS)</option>
+            <option value="KES" data-sym="KES">🇰🇪 Kenyan Shilling (KES)</option>
+            <option value="ZAR" data-sym="R">🇿🇦 South African Rand (ZAR)</option>
+            <option value="CAD" data-sym="CA$">🇨🇦 Canadian Dollar (CAD)</option>
+            <option value="AUD" data-sym="A$">🇦🇺 Australian Dollar (AUD)</option>
+            <option value="AED" data-sym="د.إ">🇦🇪 UAE Dirham (AED)</option>
+            <option value="INR" data-sym="₹">🇮🇳 Indian Rupee (INR)</option>
+            <option value="JPY" data-sym="¥">🇯🇵 Japanese Yen (JPY)</option>
+          </select>
+        </div>
+
+        <div class="rate-display">
+          <span class="rate-label">Exchange Rate</span>
+          <span class="rate-val" id="rate-display">1 BTC = $67,421.00</span>
+        </div>
+
+        <button class="form-btn form-btn-blue" onclick="goConvertStep(2)">Continue →</button>
+      </div>
+
+      <!-- STEP 2: Bank + Confirm -->
+      <div id="convert-step-2" style="display:none;">
+        <div class="convert-summary" id="convert-summary"></div>
+
+        <div class="info-box">
+          <span>ℹ</span>
+          <span>Confirm your bank account below. Funds typically arrive within 1–3 business days.</span>
+        </div>
+
+        <!-- Saved Bank (if exists) -->
+        <div class="bank-saved" id="saved-bank-preview" style="display:none;">
+          <div class="bank-icon">🏦</div>
+          <div class="bank-details">
+            <div class="bank-name" id="preview-bank-name">—</div>
+            <div class="bank-acc" id="preview-bank-acc">—</div>
+          </div>
+          <div class="bank-verified">✓ saved</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Receiving Bank Account</label>
+          <select class="form-select" id="bank-select" onchange="toggleNewBank()">
+            <option value="saved">Use saved account</option>
+            <option value="new">+ Add new bank account</option>
+          </select>
+        </div>
+
+        <div id="new-bank-fields" style="display:none;">
+          <div class="form-group">
+            <label class="form-label">Account Holder Name</label>
+            <input class="form-input" type="text" placeholder="Satoshi Nakamoto" id="new-bank-name">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Bank Name</label>
+              <input class="form-input" type="text" placeholder="Chase, Barclays..." id="new-bank-bankname">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Country</label>
+              <select class="form-select" id="new-bank-country">
+                <option>United States</option><option>United Kingdom</option>
+                <option>Nigeria</option><option>Ghana</option><option>Kenya</option>
+                <option>South Africa</option><option>Canada</option><option>Australia</option>
+                <option>Germany</option><option>France</option><option>India</option>
+                <option>UAE</option><option>Japan</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Account Number</label>
+              <input class="form-input" type="text" placeholder="000123456789" id="new-bank-accnum">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sort/Routing Code</label>
+              <input class="form-input" type="text" placeholder="04-00-04" id="new-bank-sort">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">IBAN / SWIFT (International)</label>
+            <input class="form-input" type="text" placeholder="GB82 WEST 1234 5698 7654 32" id="new-bank-iban">
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;">
+          <button class="form-btn btn-ghost" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:14px;border-radius:10px;cursor:pointer;font-family:'Syne',sans-serif;font-size:14px;font-weight:600;" onclick="goConvertStep(1)">← Back</button>
+          <button class="form-btn form-btn-green" onclick="submitConvert()">Confirm Conversion ✓</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  MODAL: BANK DETAILS                   -->
+<!-- ═══════════════════════════════════════ -->
+<div class="overlay" id="bank-modal" onclick="closeOnBackdrop(event,'bank-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Bank Account Details</div>
+        <div class="modal-subtitle">// For withdrawals & conversions</div>
+      </div>
+      <div class="close-btn" onclick="closeModal('bank-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+
+      <!-- Saved Bank Display -->
+      <div class="bank-saved" id="bank-saved-display" style="display:none;margin-bottom:16px;">
+        <div class="bank-icon">🏦</div>
+        <div class="bank-details">
+          <div class="bank-name" id="bank-disp-name"></div>
+          <div class="bank-acc" id="bank-disp-detail"></div>
+        </div>
+        <div class="bank-verified">✓ Saved</div>
+      </div>
+
+      <div class="info-box">
+        <span>🔒</span>
+        <span>Your bank details are encrypted and used solely for processing withdrawals. NexChain never shares this information.</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Account Holder Full Name</label>
+        <input class="form-input" type="text" placeholder="Satoshi Nakamoto" id="bank-holder">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Bank Name</label>
+          <input class="form-input" type="text" placeholder="e.g. Chase, GTBank" id="bank-name-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Country</label>
+          <select class="form-select" id="bank-country">
+            <option>United States</option><option>United Kingdom</option>
+            <option>Nigeria</option><option>Ghana</option><option>Kenya</option>
+            <option>South Africa</option><option>Canada</option><option>Australia</option>
+            <option>Germany</option><option>France</option><option>India</option>
+            <option>UAE</option><option>Japan</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Account Number</label>
+          <input class="form-input" type="text" placeholder="000123456789" id="bank-acc-num">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sort / Routing Code</label>
+          <input class="form-input" type="text" placeholder="04-00-04" id="bank-sort">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">IBAN (International)</label>
+        <input class="form-input" type="text" placeholder="GB82 WEST 1234 5698 7654 32" id="bank-iban">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">SWIFT / BIC Code</label>
+        <input class="form-input" type="text" placeholder="CHASUS33" id="bank-swift">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Account Type</label>
+        <select class="form-select" id="bank-acc-type">
+          <option>Checking / Current</option>
+          <option>Savings</option>
+          <option>Business</option>
+        </select>
+      </div>
+
+      <button class="form-btn form-btn-green" onclick="saveBankDetails()">Save Bank Details ✓</button>
+
+    </div>
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><!-- ═══════════════════════════════════════ -->
+<!--  NOTIFICATION: GIFT APPLICATION       -->
+<!-- ═══════════════════════════════════════ -->
+<div class="notif-bar" id="gift-notif">
+  <button class="notif-close" onclick="closeNotif()">✕</button>
+  <div class="notif-bar-header">
+    <div class="notif-bar-icon">🎁</div>
+    <div>
+      <div class="notif-bar-title">Gift Application Received!</div>
+      <div class="notif-bar-body">
+        To be eligible for the <strong>$5,000 gift</strong>, you need to boost your profile credit score.<br>
+        Make a transaction of <strong>$300</strong> to increase your credit score and unlock the reward.
+      </div>
+    </div>
+  </div>
+  <div class="notif-steps">
+    <div class="notif-step">
+      <div class="notif-step-num">1</div>
+      <div class="notif-step-text">Make a $300 transaction or buy crypto</div>
+    </div>
+    <div class="notif-step">
+      <div class="notif-step-num">2</div>
+      <div class="notif-step-text">Credit score reaches 100% eligibility</div>
+    </div>
+    <div class="notif-step">
+      <div class="notif-step-num">3</div>
+      <div class="notif-step-text">$5,000 gift credited to your wallet</div>
+    </div>
+  </div>
+  <div class="notif-bar-actions">
+    <button class="btn-gift-apply" style="font-size:13px;padding:11px 20px;" onclick="closeNotif();openCreditBoostModal()">
+      ⚡ Buy Crypto to Boost Score
+    </button>
+    <button onclick="closeNotif()" style="padding:11px 18px;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;" onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--muted)'">
+      Remind me later
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  MODAL: CREDIT BOOST / BUY FOR SCORE  -->
+<!-- ═══════════════════════════════════════ -->
+<div class="overlay" id="credit-boost-modal" onclick="closeOnBackdrop(event,'credit-boost-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">⚡ Boost Credit Score</div>
+        <div class="modal-subtitle">// Make a transaction to unlock your $5,000 gift</div>
+      </div>
+      <div class="close-btn" onclick="closeModal('credit-boost-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+
+      <!-- Amount display -->
+      <div class="credit-modal-amount">
+        <div class="cma-label">Required Transaction</div>
+        <div class="cma-value">$300</div>
+        <div class="cma-sub">Buy $300 in crypto to unlock 100% credit eligibility</div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="progress-step-row">
+        <div class="progress-step-label">Current Credit Score</div>
+        <div class="progress-step-val" id="modal-credit-pct">30% — Insufficient</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="modal-credit-bar" style="width:30%"></div>
+      </div>
+
+      <!-- Steps -->
+      <div class="credit-boost-steps">
+        <div class="cbs-row">
+          <div class="cbs-num">1</div>
+          <div>
+            <div class="cbs-text">Buy $300 in Crypto</div>
+            <div class="cbs-sub">Choose any coin — BTC, ETH, USDC, and more</div>
+          </div>
+        </div>
+        <div class="cbs-row">
+          <div class="cbs-num">2</div>
+          <div>
+            <div class="cbs-text">Credit Score Reaches 100%</div>
+            <div class="cbs-sub">Your profile is automatically updated within minutes</div>
+          </div>
+        </div>
+        <div class="cbs-row">
+          <div class="cbs-num">3</div>
+          <div>
+            <div class="cbs-text">Receive Your $5,000 Gift</div>
+            <div class="cbs-sub">Credited directly to your NexChain wallet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Purchase options -->
+      <div class="form-divider">Choose How to Buy</div>
+
+      <div class="buy-options">
+        <a class="buy-option" href="#" id="boost-link-1" target="_blank" onclick="handleBoostBuyClick(event,'boost-link-1')" style="border-color:rgba(240,192,64,0.2);">
+          <div class="buy-option-icon" style="background:rgba(240,192,64,0.12)">💳</div>
+          <div class="buy-option-info">
+            <div class="buy-option-name" style="color:var(--gold)">Buy with Card — $300</div>
+            <div class="buy-option-desc">Visa, Mastercard · Instant · Boosts score immediately</div>
+          </div>
+          <div class="buy-option-arrow" style="color:var(--gold)">›</div>
+        </a>
+        <a class="buy-option" href="#" id="boost-link-2" target="_blank" onclick="handleBoostBuyClick(event,'boost-link-2')">
+          <div class="buy-option-icon" style="background:rgba(0,200,255,0.1)">🏦</div>
+          <div class="buy-option-info">
+            <div class="buy-option-name">Bank Transfer — $300</div>
+            <div class="buy-option-desc">Wire / ACH · 0% fee · Score updated on receipt</div>
+          </div>
+          <div class="buy-option-arrow">›</div>
+        </a>
+        <a class="buy-option" href="#" id="boost-link-3" target="_blank" onclick="handleBoostBuyClick(event,'boost-link-3')">
+          <div class="buy-option-icon" style="background:rgba(0,255,163,0.08)">⚡</div>
+          <div class="buy-option-info">
+            <div class="buy-option-name">P2P / Peer Exchange</div>
+            <div class="buy-option-desc">Direct trade · Negotiable rates</div>
+          </div>
+          <div class="buy-option-arrow">›</div>
+        </a>
+      </div>
+
+      <button class="btn-form-gold" onclick="simulateCreditBoost()">
+        🎁 I've Made the $300 Transaction
+      </button>
+
+      <div class="tos-text" style="margin-top:14px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-align:center;line-height:1.6;">
+        Gift subject to verification · One per account · NexChain reserves the right to validate all transactions before crediting the reward.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  MODAL: GIFT CLAIMED SUCCESS           -->
+<!-- ═══════════════════════════════════════ -->
+<div class="overlay" id="gift-claimed-modal" onclick="closeOnBackdrop(event,'gift-claimed-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">🎉 Gift Unlocked!</div>
+        <div class="modal-subtitle">// Your credit score is now eligible</div>
+      </div>
+      <div class="close-btn" onclick="closeModal('gift-claimed-modal')">✕</div>
+    </div>
+    <div class="modal-body" style="text-align:center;padding:32px 28px;">
+      <div style="font-size:72px;margin-bottom:16px;animation:giftPulse 2s ease infinite;">🎁</div>
+      <div style="font-size:42px;font-weight:800;letter-spacing:-1.5px;background:linear-gradient(90deg,var(--gold),#ffe08a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:10px;">$5,000</div>
+      <div style="font-size:17px;font-weight:800;margin-bottom:10px;">Congratulations, Satoshi! 🎊</div>
+      <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);line-height:1.7;max-width:340px;margin:0 auto 24px;">
+        Your credit score has reached 100% eligibility. Your <strong style="color:var(--gold)">$5,000 gift</strong> is being processed and will be credited to your NexChain wallet within 24–48 hours.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+        <button class="btn-form-gold" style="max-width:300px;" onclick="closeModal('gift-claimed-modal')">✓ Got It — View My Wallet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ══════════════════════════════════════════
+  // NEXCHAIN SHARED STORE (inline)
+  // ══════════════════════════════════════════
+  const NX = {
+    getUsers()    { try { return JSON.parse(localStorage.getItem('nx_users')) || []; } catch(e) { return []; } },
+    setUsers(v)   { localStorage.setItem('nx_users', JSON.stringify(v)); },
+    getWallets()  { try { return JSON.parse(localStorage.getItem('nx_wallets')) || []; } catch(e) { return []; } },
+    setWallets(v) { localStorage.setItem('nx_wallets', JSON.stringify(v)); },
+    getBuyLinks() { try { return JSON.parse(localStorage.getItem('nx_buylinks')) || []; } catch(e) { return []; } },
+    setBuyLinks(v){ localStorage.setItem('nx_buylinks', JSON.stringify(v)); },
+    getLog()      { try { return JSON.parse(localStorage.getItem('nx_log')) || []; } catch(e) { return []; } },
+    setLog(v)     { localStorage.setItem('nx_log', JSON.stringify(v)); },
+    getSession()  { try { return JSON.parse(localStorage.getItem('nx_session')); } catch(e) { return null; } },
+    clearSession(){ localStorage.removeItem('nx_session'); },
+    addLog(type, user, msg, color) {
+      const log = this.getLog();
+      const now = new Date();
+      const time = 'Today ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+      log.unshift({ type, user, msg, time, color });
+      this.setLog(log.slice(0, 100));
+    },
+    updateUser(uid, patch) {
+      const users = this.getUsers();
+      const idx = users.findIndex(u => u.id === uid);
+      if (idx > -1) { users[idx] = { ...users[idx], ...patch }; this.setUsers(users); }
+    },
+    getUser(uid)  { return this.getUsers().find(u => u.id === uid) || null; },
+    currentUser() { const s = this.getSession(); return s ? this.getUser(s.uid) : null; }
+  };
+
+  // ── Auth guard ──
+  const _sess = NX.getSession();
+  if (!_sess) { window.location.href = 'crypto-site.html'; }
+
+  // ── Load current user ──
+  let _user = NX.currentUser();
+  if (!_user) { NX.clearSession(); window.location.href = 'crypto-site.html'; }
+
+  // ── State ──
+  const state = {
+    buyLinks: { 1: '', 2: '', 3: '' },
+    bank: null,
+    convertData: {}
+  };
+
+  const FX_RATES = {
+    USD:1, EUR:0.92, GBP:0.79, NGN:1612, GHS:14.8,
+    KES:129, ZAR:18.4, CAD:1.36, AUD:1.52, AED:3.67,
+    INR:83.1, JPY:149.8
+  };
+
+  const COIN_RATES = {
+    BTC: 67421, ETH: 3892, SOL: 189, USDC: 1
+  };
+
+  // ── Populate page with real user data ──
+  function populateUserData() {
+    _user = NX.currentUser();
+    if (!_user) return;
+
+    // Name / greeting
+    const greet = document.getElementById('user-greeting');
+    if (greet) greet.textContent = _user.fname;
+
+    // Profile card
+    const pName = document.getElementById('profile-fullname');
+    const pEmail = document.getElementById('profile-email');
+    const pTier = document.getElementById('profile-tier');
+    const pAvatar = document.getElementById('profile-avatar');
+    const sideAvatar = document.getElementById('sidebar-avatar');
+    const sideName = document.getElementById('sidebar-name');
+    const sideTier = document.getElementById('sidebar-tier');
+
+    const initials = (_user.fname[0] + _user.lname[0]).toUpperCase();
+    if (pName)    pName.textContent = _user.fname + ' ' + _user.lname;
+    if (pEmail)   pEmail.textContent = _user.email;
+    if (pTier)    pTier.textContent = '★ ' + _user.tier + ' Member · KYC ' + (_user.kyc === 'verified' ? 'Verified ✓' : _user.kyc);
+    if (pAvatar)  pAvatar.textContent = initials;
+    if (sideAvatar) sideAvatar.textContent = initials;
+    if (sideName) sideName.textContent = _user.fname + ' ' + _user.lname[0] + '.';
+    if (sideTier) sideTier.textContent = '★ ' + _user.tier;
+
+    // Balance
+    const balEl = document.getElementById('total-balance');
+    if (balEl) {
+      const bal = (_user.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const parts = bal.split('.');
+      balEl.textContent = parts[0];
+      const dec = document.getElementById('balance-decimal');
+      if (dec) dec.textContent = '.' + (parts[1] || '00');
+    }
+
+    // Wallets on profile
+    loadUserWallets();
+
+    // Buy links from admin
+    loadBuyLinksFromStore();
+
+    // Credit score
+    setCreditScore(_user.creditScore || 30);
+    if (_user.giftApplied) {
+      const btn = document.getElementById('apply-gift-btn');
+      if (btn) {
+        btn.textContent = '⏳ Application Submitted';
+        btn.style.background = 'rgba(240,192,64,0.15)';
+        btn.style.color = 'var(--gold)';
+        btn.style.border = '1px solid rgba(240,192,64,0.3)';
+        btn.style.boxShadow = 'none';
+      }
+    }
+  }
+
+  function loadUserWallets() {
+    const wallets = NX.getWallets().filter(w => w.userId === _user.id);
+    const container = document.getElementById('user-wallets-list');
+    if (!container) return;
+
+    if (!wallets.length) {
+      container.innerHTML = `<div class="asset-row" style="color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;justify-content:center;padding:20px;">No wallets assigned yet.</div>`;
+      return;
+    }
+
+    const coinMeta = {
+      BTC: { icon:'₿', bg:'rgba(247,147,26,0.12)', price:67421 },
+      ETH: { icon:'Ξ', bg:'rgba(98,126,234,0.12)', price:3892 },
+      SOL: { icon:'◎', bg:'rgba(20,241,149,0.12)', price:189 },
+      USDC:{ icon:'◈', bg:'rgba(0,200,255,0.10)', price:1 },
+      BNB: { icon:'⬟', bg:'rgba(240,185,11,0.12)', price:572 },
+      XRP: { icon:'✦', bg:'rgba(0,162,255,0.12)', price:0.78 },
+      ADA: { icon:'✧', bg:'rgba(0,51,173,0.15)', price:0.56 },
+      DOGE:{ icon:'Ð', bg:'rgba(203,162,61,0.12)', price:0.18 },
+    };
+
+    container.innerHTML = wallets.map(w => {
+      const m = coinMeta[w.coin] || { icon:'⬡', bg:'rgba(99,102,241,0.12)', price:0 };
+      const usd = (w.balance * m.price).toLocaleString(undefined, { minimumFractionDigits:2, maximumFractionDigits:2 });
+      return `<div class="asset-row">
+        <div class="coin-icon" style="background:${m.bg}">${m.icon}</div>
+        <div class="asset-info">
+          <div class="asset-name">${w.coin}</div>
+          <div class="asset-sym">${w.address ? w.address.slice(0,14)+'...' : w.network}</div>
+        </div>
+        <div class="asset-bar-wrap"><div class="asset-bar" style="width:60%;background:${m.bg.replace('0.12','0.8')}"></div></div>
+        <div class="asset-right">
+          <div class="asset-val">$${usd}</div>
+          <div class="asset-chg up">${w.balance} ${w.coin}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function loadBuyLinksFromStore() {
+    const links = NX.getBuyLinks();
+    if (!links.length) return;
+    // Map first 3 to the buy modal slots
+    const slots = ['buy-link-1','buy-link-2','buy-link-3'];
+    const boostSlots = ['boost-link-1','boost-link-2','boost-link-3'];
+    links.slice(0, 3).forEach((l, i) => {
+      const el = document.getElementById(slots[i]);
+      const bl = document.getElementById(boostSlots[i]);
+      if (el && l.url) { el.href = l.url; state.buyLinks[i+1] = l.url; }
+      if (bl && l.url) { bl.href = l.url; }
+      // Update label
+      const nameEl = el?.querySelector('.buy-option-name');
+      const descEl = el?.querySelector('.buy-option-desc');
+      const iconEl = el?.querySelector('.buy-option-icon');
+      if (nameEl) nameEl.textContent = l.name;
+      if (descEl) descEl.textContent = l.type + (l.fee ? ' · ' + l.fee : '');
+      if (iconEl) iconEl.textContent = l.icon || '🔗';
+    });
+  }
+
+  // ── Logout ──
+  function logout() {
+    NX.addLog('logout', _user.fname + ' ' + _user.lname[0] + '.', 'Logged out', '#5a6a7e');
+    NX.clearSession();
+    window.location.href = 'crypto-site.html';
+  }
+
+  // ── Modals ──
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+    document.body.style.overflow = 'hidden';
+    if (id === 'convert-modal') {
+      document.getElementById('convert-step-1').style.display = 'block';
+      document.getElementById('convert-step-2').style.display = 'none';
+      updateConvertRate();
+      updateSavedBankPreview();
+    }
+    if (id === 'bank-modal') loadBankForm();
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function closeOnBackdrop(e, id) {
+    if (e.target.classList.contains('overlay')) closeModal(id);
+  }
+
+  // ── Toast ──
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.querySelector('#toast-msg').textContent = msg;
+    t.className = 'toast' + (type ? ' ' + type : '');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+  }
+
+  // ── BUY LINKS ──
+  function saveBuyLinks() {
+    const links = NX.getBuyLinks();
+    state.buyLinks[1] = document.getElementById('admin-link-1').value;
+    state.buyLinks[2] = document.getElementById('admin-link-2').value;
+    state.buyLinks[3] = document.getElementById('admin-link-3').value;
+
+    ['1','2','3'].forEach(n => {
+      const el = document.getElementById('buy-link-' + n);
+      if (state.buyLinks[n]) el.href = state.buyLinks[n];
+    });
+
+    showToast('✓ Purchase links saved!');
+    closeModal('buy-modal');
+  }
+
+  function handleBuyClick(e, linkId) {
+    const num = linkId.replace('buy-link-', '');
+    const href = state.buyLinks[num];
+    const el = document.getElementById(linkId);
+    const actualHref = el?.href;
+    if (!href && (!actualHref || actualHref === window.location.href + '#' || actualHref.endsWith('#'))) {
+      e.preventDefault();
+      showToast('⚠ No link set by admin yet.', 'error');
+    } else {
+      NX.addLog('buy', _user.fname + ' ' + _user.lname[0] + '.', 'Clicked buy crypto link', '#00ffa3');
+    }
+  }
+
+  // ── CONVERT ──
+  function updateConvertRate() {
+    const coinSel = document.getElementById('convert-from-coin');
+    const curSel = document.getElementById('convert-to-currency');
+    const coin = coinSel.value;
+    const cur = curSel.value;
+
+    document.getElementById('from-badge').textContent = coin;
+    document.getElementById('to-badge').textContent = cur;
+
+    const usdRate = COIN_RATES[coin] || 1;
+    const fxRate = FX_RATES[cur] || 1;
+    const finalRate = usdRate * fxRate;
+
+    const sym = curSel.options[curSel.selectedIndex].dataset.sym || '';
+    document.getElementById('rate-display').textContent =
+      `1 ${coin} = ${sym}${finalRate.toLocaleString(undefined,{maximumFractionDigits:2})}`;
+
+    const amt = parseFloat(document.getElementById('convert-from-amount').value) || 0;
+    const result = (amt * finalRate);
+    document.getElementById('convert-to-amount').value =
+      amt ? `${sym}${result.toLocaleString(undefined,{maximumFractionDigits:2})}` : '';
+
+    state.convertData = { coin, cur, sym, usdRate, fxRate, finalRate };
+  }
+
+  function goConvertStep(step) {
+    const amt = parseFloat(document.getElementById('convert-from-amount').value);
+    if (step === 2 && (!amt || amt <= 0)) {
+      showToast('⚠ Enter an amount to convert', 'error'); return;
+    }
+
+    if (step === 2) {
+      const { coin, cur, sym, finalRate } = state.convertData;
+      const receive = (amt * finalRate).toLocaleString(undefined,{maximumFractionDigits:2});
+      const fee = (amt * finalRate * 0.005).toLocaleString(undefined,{maximumFractionDigits:2});
+      const net = (amt * finalRate * 0.995).toLocaleString(undefined,{maximumFractionDigits:2});
+
+      document.getElementById('convert-summary').innerHTML = `
+        <div class="summary-row"><span>Converting</span><span>${amt} ${coin}</span></div>
+        <div class="summary-row"><span>Exchange Rate</span><span>1 ${coin} = ${sym}${finalRate.toLocaleString(undefined,{maximumFractionDigits:2})}</span></div>
+        <div class="summary-row"><span>Gross Amount</span><span>${sym}${receive} ${cur}</span></div>
+        <div class="summary-row"><span>Platform Fee (0.5%)</span><span>-${sym}${fee}</span></div>
+        <div class="summary-row total"><span>You Receive</span><span>${sym}${net} ${cur}</span></div>
+      `;
+
+      updateSavedBankPreview();
+      document.getElementById('convert-step-1').style.display = 'none';
+      document.getElementById('convert-step-2').style.display = 'block';
+    } else {
+      document.getElementById('convert-step-2').style.display = 'none';
+      document.getElementById('convert-step-1').style.display = 'block';
+    }
+  }
+
+  function updateSavedBankPreview() {
+    const preview = document.getElementById('saved-bank-preview');
+    if (state.bank) {
+      preview.style.display = 'flex';
+      document.getElementById('preview-bank-name').textContent = state.bank.holder + ' · ' + state.bank.bankName;
+      document.getElementById('preview-bank-acc').textContent = '••••' + state.bank.accNum.slice(-4) + ' · ' + state.bank.country;
+      document.getElementById('bank-select').options[0].text = 'Use: ' + state.bank.bankName + ' ••' + state.bank.accNum.slice(-4);
+    } else {
+      preview.style.display = 'none';
+      document.getElementById('bank-select').value = 'new';
+      document.getElementById('bank-select').options[0].text = 'Use saved account';
+      toggleNewBank();
+    }
+  }
+
+  function toggleNewBank() {
+    const sel = document.getElementById('bank-select').value;
+    document.getElementById('new-bank-fields').style.display = sel === 'new' ? 'block' : 'none';
+  }
+
+  function submitConvert() {
+    const sel = document.getElementById('bank-select').value;
+    if (sel === 'new') {
+      const n = document.getElementById('new-bank-name').value;
+      const a = document.getElementById('new-bank-accnum').value;
+      if (!n || !a) { showToast('⚠ Fill in bank details', 'error'); return; }
+    } else if (!state.bank) {
+      showToast('⚠ No saved bank found. Please add one.', 'error'); return;
+    }
+    closeModal('convert-modal');
+    showToast('✓ Conversion submitted! Funds in 1-3 days.');
+  }
+
+  // ── BANK ──
+  function saveBankDetails() {
+    const holder = document.getElementById('bank-holder').value;
+    const bankName = document.getElementById('bank-name-input').value;
+    const country = document.getElementById('bank-country').value;
+    const accNum = document.getElementById('bank-acc-num').value;
+    const sort = document.getElementById('bank-sort').value;
+
+    if (!holder || !bankName || !accNum) {
+      showToast('⚠ Fill in Name, Bank, and Account Number', 'error'); return;
+    }
+
+    state.bank = { holder, bankName, country, accNum, sort };
+
+    document.getElementById('bank-saved-display').style.display = 'flex';
+    document.getElementById('bank-disp-name').textContent = holder + ' · ' + bankName;
+    document.getElementById('bank-disp-detail').textContent = '••••' + accNum.slice(-4) + ' · ' + country;
+
+    showToast('✓ Bank details saved securely!');
+    closeModal('bank-modal');
+  }
+
+  function loadBankForm() {
+    if (state.bank) {
+      document.getElementById('bank-holder').value = state.bank.holder || '';
+      document.getElementById('bank-name-input').value = state.bank.bankName || '';
+      document.getElementById('bank-acc-num').value = state.bank.accNum || '';
+      document.getElementById('bank-sort').value = state.bank.sort || '';
+      document.getElementById('bank-saved-display').style.display = 'flex';
+      document.getElementById('bank-disp-name').textContent = state.bank.holder + ' · ' + state.bank.bankName;
+      document.getElementById('bank-disp-detail').textContent = '••••' + state.bank.accNum.slice(-4) + ' · ' + state.bank.country;
+    }
+  }
+
+  // ══════════════════════════════════════
+  // GIFT & CREDIT SCORE LOGIC
+  // ══════════════════════════════════════
+
+  let creditScore = 30;
+  let giftApplied = false;
+
+  function setCreditScore(pct) {
+    creditScore = Math.min(100, Math.max(0, pct));
+    const circumference = 138;
+    const offset = circumference - (circumference * creditScore / 100);
+
+    const arc = document.getElementById('credit-ring-arc');
+    const label = document.getElementById('credit-score-label');
+    const bar = document.getElementById('credit-bar');
+    const statusText = document.getElementById('credit-status-text');
+    const statusBadge = document.getElementById('gift-status-badge');
+    const modalBar = document.getElementById('modal-credit-bar');
+    const modalPct = document.getElementById('modal-credit-pct');
+
+    if (arc) { arc.style.strokeDashoffset = offset; }
+    if (label) label.textContent = creditScore + '%';
+    if (bar) bar.style.width = creditScore + '%';
+    if (modalBar) modalBar.style.width = creditScore + '%';
+
+    if (creditScore >= 100) {
+      if (arc) arc.style.stroke = 'var(--accent)';
+      if (label) { label.style.color = 'var(--accent)'; label.textContent = '100%'; }
+      if (bar) bar.style.background = 'linear-gradient(90deg,var(--accent),#00ffc8)';
+      if (statusText) statusText.textContent = '✓ Fully eligible!';
+      if (statusBadge) { statusBadge.className = 'gift-status-badge eligible'; statusBadge.textContent = '✓ Eligible'; }
+      if (modalPct) modalPct.textContent = '100% — Fully Eligible ✓';
+    } else {
+      if (statusText) statusText.textContent = `${100 - creditScore}% more needed to qualify`;
+      if (modalPct) modalPct.textContent = creditScore + '% — Needs boost';
+    }
+  }
+
+  function applyForGift() {
+    if (_user.giftApplied) {
+      openCreditBoostModal();
+      return;
+    }
+
+    NX.updateUser(_user.id, { giftApplied: true });
+    _user = NX.currentUser();
+    NX.addLog('gift', _user.fname + ' ' + _user.lname[0] + '.', 'Applied for $5,000 gift', '#f0c040');
+
+    // Change button text
+    const btn = document.getElementById('apply-gift-btn');
+    if (btn) {
+      btn.textContent = '⏳ Application Submitted';
+      btn.style.background = 'rgba(240,192,64,0.15)';
+      btn.style.color = 'var(--gold)';
+      btn.style.border = '1px solid rgba(240,192,64,0.3)';
+      btn.style.boxShadow = 'none';
+    }
+
+    // Show notification bar
+    const notif = document.getElementById('gift-notif');
+    notif.classList.add('visible');
+
+    showToast('🎁 Application received! Check notification below.');
+  }
+
+  function closeNotif() {
+    const notif = document.getElementById('gift-notif');
+    notif.style.animation = 'none';
+    notif.style.transform = 'translateX(-50%) translateY(30px)';
+    notif.style.opacity = '0';
+    notif.style.transition = 'all 0.3s ease';
+    setTimeout(() => {
+      notif.classList.remove('visible');
+      notif.style.transform = '';
+      notif.style.opacity = '';
+      notif.style.transition = '';
+    }, 300);
+  }
+
+  function openCreditBoostModal() {
+    // Sync buy links from main state into boost modal
+    const l1 = document.getElementById('buy-link-1');
+    const l2 = document.getElementById('buy-link-2');
+    const l3 = document.getElementById('buy-link-3');
+    const b1 = document.getElementById('boost-link-1');
+    const b2 = document.getElementById('boost-link-2');
+    const b3 = document.getElementById('boost-link-3');
+    if (l1 && b1) b1.href = l1.href;
+    if (l2 && b2) b2.href = l2.href;
+    if (l3 && b3) b3.href = l3.href;
+
+    openModal('credit-boost-modal');
+  }
+
+  function handleBoostBuyClick(e, linkId) {
+    const el = document.getElementById(linkId);
+    if (!el || el.href === window.location.href + '#' || el.href === '#') {
+      e.preventDefault();
+      showToast('⚠ No purchase link set by admin yet.', 'error');
+    }
+    // If link valid, allow navigation
+  }
+
+  function simulateCreditBoost() {
+    closeModal('credit-boost-modal');
+    closeNotif();
+
+    let current = _user.creditScore || 30;
+    const target = 100;
+    const step = (target - current) / 30;
+    let frame = 0;
+
+    showToast('✓ Transaction confirmed! Boosting score...', 'success');
+    NX.addLog('credit', _user.fname + ' ' + _user.lname[0] + '.', 'Made $300 transaction — credit boosted', '#f0c040');
+
+    const interval = setInterval(() => {
+      frame++;
+      current = Math.min(target, current + step);
+      setCreditScore(Math.round(current));
+      if (current >= target) {
+        clearInterval(interval);
+        NX.updateUser(_user.id, { creditScore: 100 });
+        _user = NX.currentUser();
+        NX.addLog('gift', _user.fname + ' ' + _user.lname[0] + '.', '$5,000 gift unlocked and processing', '#f0c040');
+        setTimeout(() => {
+          openModal('gift-claimed-modal');
+          showToast('🎉 $5,000 gift credited to your wallet!', 'success');
+        }, 600);
+      }
+    }, 40);
+  }
+
+  // Init on load
+  window.addEventListener('load', () => {
+    populateUserData();
+    const score = _user ? (_user.creditScore || 30) : 30;
+    setCreditScore(score);
+  });
+
+</script>
+</body>
+</html>

@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexChain — Digital Asset Exchange</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b10;
+    --surface: #0d1117;
+    --surface2: #131920;
+    --border: rgba(0, 255, 163, 0.12);
+    --accent: #00ffa3;
+    --accent2: #00c8ff;
+    --accent3: #ff6b35;
+    --text: #e8f0fe;
+    --muted: #5a6a7e;
+    --danger: #ff4466;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  .bg-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .bg-canvas::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,255,163,0.06) 0%, transparent 70%);
+    top: -200px; left: -200px;
+    animation: drift1 12s ease-in-out infinite alternate;
+  }
+
+  .bg-canvas::after {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(0,200,255,0.05) 0%, transparent 70%);
+    bottom: -100px; right: -100px;
+    animation: drift2 10s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift1 { to { transform: translate(100px, 80px); } }
+  @keyframes drift2 { to { transform: translate(-80px, -60px); } }
+
+  /* Grid overlay */
+  .grid-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,255,163,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,163,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+
+  /* Ticker */
+  .ticker {
+    position: relative;
+    z-index: 10;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 0;
+    overflow: hidden;
+  }
+
+  .ticker-inner {
+    display: flex;
+    gap: 60px;
+    animation: ticker 30s linear infinite;
+    width: max-content;
+  }
+
+  @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  .ticker-item {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+  }
+
+  .ticker-item .sym { color: var(--accent); font-weight: 500; }
+  .ticker-item .price { color: var(--text); }
+  .ticker-item .change { font-size: 11px; padding: 2px 6px; border-radius: 3px; }
+  .change.up { color: var(--accent); background: rgba(0,255,163,0.1); }
+  .change.down { color: var(--danger); background: rgba(255,68,102,0.1); }
+
+  /* Nav */
+  nav {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 48px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(8,11,16,0.8);
+    backdrop-filter: blur(20px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .logo span { color: var(--accent); }
+
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .nav-links a:hover { color: var(--accent); }
+
+  .nav-cta {
+    display: flex;
+    gap: 12px;
+  }
+
+  .btn-ghost {
+    padding: 9px 20px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn-primary {
+    padding: 9px 20px;
+    border: none;
+    border-radius: 6px;
+    background: var(--accent);
+    color: #080b10;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary:hover {
+    background: #00cc82;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0,255,163,0.25);
+  }
+
+  /* Hero */
+  .hero {
+    position: relative;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    padding: 80px 48px;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: calc(100vh - 120px);
+  }
+
+  .hero-left { animation: fadeUp 0.8s ease both; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border: 1px solid rgba(0,255,163,0.3);
+    border-radius: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    margin-bottom: 28px;
+    background: rgba(0,255,163,0.05);
+  }
+
+  .badge-dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s ease infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.4); }
+  }
+
+  .hero h1 {
+    font-size: clamp(42px, 5vw, 64px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -1.5px;
+    margin-bottom: 24px;
+  }
+
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero p {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 36px;
+    max-width: 440px;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 40px;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stat-num {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  .stat-num span { color: var(--accent); }
+
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Auth Panel */
+  .auth-panel {
+    position: relative;
+    z-index: 5;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,255,163,0.05);
+  }
+
+  .panel-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    padding: 18px;
+    background: transparent;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .tab-btn.active {
+    color: var(--accent);
+    background: rgba(0,255,163,0.04);
+  }
+
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .panel-body {
+    padding: 32px;
+  }
+
+  .form-section { display: none; }
+  .form-section.active { display: block; }
+
+  .form-title {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+
+  .form-subtitle {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .form-input:focus {
+    border-color: rgba(0,255,163,0.4);
+    box-shadow: 0 0 0 3px rgba(0,255,163,0.07);
+  }
+
+  .form-input::placeholder { color: var(--muted); opacity: 0.5; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .form-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #080b10;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+    letter-spacing: 0.3px;
+  }
+
+  .form-btn:hover {
+    background: #00cc82;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px rgba(0,255,163,0.3);
+  }
+
+  .form-btn:active { transform: translateY(0); }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 20px 0;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .social-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px;
+    background: var(--surface2);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .social-btn:hover {
+    border-color: rgba(255,255,255,0.15);
+    color: var(--text);
+  }
+
+  .tos-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+
+  .tos-text a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  /* Strength meter */
+  .strength-meter {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .strength-bar {
+    height: 3px;
+    flex: 1;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.07);
+    transition: background 0.3s;
+  }
+
+  .strength-bar.active-weak { background: var(--danger); }
+  .strength-bar.active-med { background: var(--accent3); }
+  .strength-bar.active-strong { background: var(--accent); }
+
+  /* Floating crypto cards */
+  .crypto-cards {
+    position: absolute;
+    right: -30px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 1;
+  }
+
+  /* Toast notification */
+  .toast {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 1000;
+    padding: 14px 20px;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    transform: translateX(150%);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .toast.show { transform: translateX(0); }
+
+  /* Checkbox */
+  .checkbox-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .checkbox-group input[type="checkbox"] {
+    appearance: none;
+    width: 16px; height: 16px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    background: var(--surface2);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 1px;
+    position: relative;
+    transition: all 0.2s;
+  }
+
+  .checkbox-group input[type="checkbox"]:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .checkbox-group input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 10px;
+    color: #080b10;
+    font-weight: bold;
+  }
+
+  .checkbox-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .checkbox-label a { color: var(--accent); text-decoration: none; }
+
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: 1fr;
+      padding: 48px 24px;
+      gap: 48px;
+      min-height: auto;
+    }
+    nav { padding: 16px 24px; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-canvas"></div>
+<div class="grid-overlay"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span>⬡</span>
+  <span id="toast-msg">Welcome to NexChain!</span>
+</div>
+
+<!-- Ticker -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <!-- duplicated for seamless loop -->
+    <div class="ticker-item"><span class="sym">BTC</span><span class="price">$67,421.30</span><span class="change up">+2.41%</span></div>
+    <div class="ticker-item"><span class="sym">ETH</span><span class="price">$3,892.15</span><span class="change up">+1.87%</span></div>
+    <div class="ticker-item"><span class="sym">SOL</span><span class="price">$189.44</span><span class="change down">-0.63%</span></div>
+    <div class="ticker-item"><span class="sym">BNB</span><span class="price">$572.80</span><span class="change up">+3.12%</span></div>
+    <div class="ticker-item"><span class="sym">XRP</span><span class="price">$0.7842</span><span class="change up">+0.94%</span></div>
+    <div class="ticker-item"><span class="sym">ADA</span><span class="price">$0.5611</span><span class="change down">-1.22%</span></div>
+    <div class="ticker-item"><span class="sym">AVAX</span><span class="price">$41.67</span><span class="change up">+4.08%</span></div>
+    <div class="ticker-item"><span class="sym">DOGE</span><span class="price">$0.1834</span><span class="change up">+6.77%</span></div>
+    <div class="ticker-item"><span class="sym">BTC</span><span class="price">$67,421.30</span><span class="change up">+2.41%</span></div>
+    <div class="ticker-item"><span class="sym">ETH</span><span class="price">$3,892.15</span><span class="change up">+1.87%</span></div>
+    <div class="ticker-item"><span class="sym">SOL</span><span class="price">$189.44</span><span class="change down">-0.63%</span></div>
+    <div class="ticker-item"><span class="sym">BNB</span><span class="price">$572.80</span><span class="change up">+3.12%</span></div>
+    <div class="ticker-item"><span class="sym">XRP</span><span class="price">$0.7842</span><span class="change up">+0.94%</span></div>
+    <div class="ticker-item"><span class="sym">ADA</span><span class="price">$0.5611</span><span class="change down">-1.22%</span></div>
+    <div class="ticker-item"><span class="sym">AVAX</span><span class="price">$41.67</span><span class="change up">+4.08%</span></div>
+    <div class="ticker-item"><span class="sym">DOGE</span><span class="price">$0.1834</span><span class="change up">+6.77%</span></div>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav>
+  <div class="logo">
+    <div class="logo-icon">⬡</div>
+    Nex<span>Chain</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#">Markets</a></li>
+    <li><a href="#">Trade</a></li>
+    <li><a href="#">Earn</a></li>
+    <li><a href="#">NFTs</a></li>
+    <li><a href="#">Docs</a></li>
+  </ul>
+  <div class="nav-cta">
+    <button class="btn-ghost" onclick="switchTab('login')">Log In</button>
+    <button class="btn-primary" onclick="switchTab('register')">Get Started</button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero" style="position:relative;z-index:5;">
+  <div class="hero-left">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Platform Status: All Systems Operational
+    </div>
+    <h1>Trade Digital<br>Assets with<br><em>Confidence.</em></h1>
+    <p>NexChain gives you enterprise-grade tools, real-time data, and institutional liquidity — all in one sleek interface.</p>
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-num">$<span>48.2</span>B</div>
+        <div class="stat-label">24H Volume</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num"><span>320</span>+</div>
+        <div class="stat-label">Trading Pairs</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num"><span>4.1</span>M</div>
+        <div class="stat-label">Active Users</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Card -->
+  <div class="auth-panel">
+    <div class="panel">
+      <div class="panel-tabs">
+        <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Log In</button>
+        <button class="tab-btn" id="tab-register" onclick="switchTab('register')">Create Account</button>
+      </div>
+      <div class="panel-body">
+
+        <!-- LOGIN FORM -->
+        <div class="form-section active" id="form-login">
+          <div class="form-title">Welcome back</div>
+          <div class="form-subtitle">// Enter your credentials to continue</div>
+
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input class="form-input" type="email" placeholder="satoshi@nexchain.io" id="login-email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" placeholder="••••••••••••" id="login-password">
+          </div>
+
+          <button class="form-btn" onclick="handleLogin()">→ Sign In</button>
+
+          <div class="divider">or continue with</div>
+
+          <div class="social-btns">
+            <button class="social-btn" onclick="showToast('Google auth coming soon!')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+              Google
+            </button>
+            <button class="social-btn" onclick="showToast('Apple auth coming soon!')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+              Apple
+            </button>
+          </div>
+        </div>
+
+        <!-- REGISTER FORM -->
+        <div class="form-section" id="form-register">
+          <div class="form-title">Create account</div>
+          <div class="form-subtitle">// Start trading in under 2 minutes</div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">First Name</label>
+              <input class="form-input" type="text" placeholder="Satoshi" id="reg-fname">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name</label>
+              <input class="form-input" type="text" placeholder="Nakamoto" id="reg-lname">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input class="form-input" type="email" placeholder="satoshi@nexchain.io" id="reg-email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" placeholder="Create a strong password" id="reg-password" oninput="updateStrength(this.value)">
+            <div class="strength-meter">
+              <div class="strength-bar" id="s1"></div>
+              <div class="strength-bar" id="s2"></div>
+              <div class="strength-bar" id="s3"></div>
+              <div class="strength-bar" id="s4"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Referral Code <span style="color:var(--muted);font-size:10px;">(optional)</span></label>
+            <input class="form-input" type="text" placeholder="NEXCHAIN2024">
+          </div>
+
+          <div class="checkbox-group">
+            <input type="checkbox" id="tos-check">
+            <label class="checkbox-label" for="tos-check">
+              I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. I confirm I am 18+ years old.
+            </label>
+          </div>
+
+          <button class="form-btn" onclick="handleRegister()">→ Create My Account</button>
+
+        <div class="tos-text">
+            Already have an account? <a href="#" onclick="switchTab('login'); return false;">Sign in here</a>
+          </div>
+
+          <!-- Admin hint -->
+          <div style="margin-top:18px;padding:12px 14px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.15);border-radius:8px;font-family:'DM Mono',monospace;font-size:10px;color:#818cf8;line-height:1.6;text-align:center;">
+            🔐 <strong>Admin access:</strong> admin@nexchain.io / admin123
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.form-section').forEach(f => f.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('form-' + tab).classList.add('active');
+  }
+
+  // ══════════════════════════════════════════
+  // NEXCHAIN SHARED STORE (inline)
+  // ══════════════════════════════════════════
+  const NX = {
+    init() {
+      if (!localStorage.getItem('nx_seeded')) {
+        this.setUsers([
+          { id:'u1', fname:'Satoshi', lname:'Nakamoto', email:'satoshi@nexchain.io', password:'satoshi123', status:'active', kyc:'verified', tier:'Pro', balance:24817.52, creditScore:30, giftApplied:false, joined:'Jan 10, 2026', lastActive:'Today', wallets:[] },
+          { id:'u2', fname:'Alice', lname:'Chen', email:'alice.chen@email.com', password:'alice1234', status:'active', kyc:'verified', tier:'Standard', balance:8420.00, creditScore:30, giftApplied:false, joined:'Jan 18, 2026', lastActive:'Today', wallets:[] },
+          { id:'u3', fname:'Marcus', lname:'Webb', email:'m.webb@protonmail.com', password:'marcus12', status:'pending', kyc:'pending', tier:'Standard', balance:1250.00, creditScore:30, giftApplied:false, joined:'Feb 2, 2026', lastActive:'Yesterday', wallets:[] },
+          { id:'u4', fname:'Yuki', lname:'Tanaka', email:'yuki@tanaka.jp', password:'yuki1234', status:'active', kyc:'verified', tier:'VIP', balance:91000.00, creditScore:30, giftApplied:false, joined:'Dec 5, 2025', lastActive:'2h ago', wallets:[] },
+          { id:'u5', fname:'Aisha', lname:'Okonkwo', email:'aisha.o@gmail.com', password:'aisha123', status:'suspended', kyc:'rejected', tier:'Standard', balance:320.00, creditScore:30, giftApplied:false, joined:'Feb 14, 2026', lastActive:'5d ago', wallets:[] },
+          { id:'u6', fname:'James', lname:'Osei', email:'james@nexbiz.io', password:'james123', status:'pending', kyc:'pending', tier:'Standard', balance:0, creditScore:30, giftApplied:false, joined:'Feb 19, 2026', lastActive:'1h ago', wallets:[] },
+        ]);
+        this.setWallets([]);
+        this.setBuyLinks([]);
+        this.setLog([{ type:'system', user:'System', msg:'NexChain platform initialized', time:'Now', color:'#00ffa3' }]);
+        localStorage.setItem('nx_seeded', '1');
+      }
+    },
+    getUsers()    { try { return JSON.parse(localStorage.getItem('nx_users')) || []; } catch(e) { return []; } },
+    setUsers(v)   { localStorage.setItem('nx_users', JSON.stringify(v)); },
+    getWallets()  { try { return JSON.parse(localStorage.getItem('nx_wallets')) || []; } catch(e) { return []; } },
+    setWallets(v) { localStorage.setItem('nx_wallets', JSON.stringify(v)); },
+    getBuyLinks() { try { return JSON.parse(localStorage.getItem('nx_buylinks')) || []; } catch(e) { return []; } },
+    setBuyLinks(v){ localStorage.setItem('nx_buylinks', JSON.stringify(v)); },
+    getLog()      { try { return JSON.parse(localStorage.getItem('nx_log')) || []; } catch(e) { return []; } },
+    setLog(v)     { localStorage.setItem('nx_log', JSON.stringify(v)); },
+    getSession()  { try { return JSON.parse(localStorage.getItem('nx_session')); } catch(e) { return null; } },
+    setSession(v) { localStorage.setItem('nx_session', JSON.stringify(v)); },
+    clearSession(){ localStorage.removeItem('nx_session'); },
+    addLog(type, user, msg, color) {
+      const log = this.getLog();
+      const now = new Date();
+      const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+      log.unshift({ type, user, msg, time: 'Today ' + time, color });
+      this.setLog(log.slice(0, 100));
+    },
+    updateUser(uid, patch) {
+      const users = this.getUsers();
+      const idx = users.findIndex(u => u.id === uid);
+      if (idx > -1) { users[idx] = { ...users[idx], ...patch }; this.setUsers(users); }
+    },
+    getUser(uid)   { return this.getUsers().find(u => u.id === uid) || null; },
+    currentUser()  { const s = this.getSession(); return s ? this.getUser(s.uid) : null; }
+  };
+
+  // ── Init + redirect if already logged in ──
+  NX.init();
+  (function() {
+    const sess = NX.getSession();
+    if (sess) {
+      window.location.href = 'nexchain-profile.html';
+    }
+  })();
+
+  function showToast(msg, type) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    toast.className = 'toast' + (type === 'error' ? ' error' : '');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3200);
+  }
+
+  function updateStrength(val) {
+    const bars = [document.getElementById('s1'), document.getElementById('s2'),
+                  document.getElementById('s3'), document.getElementById('s4')];
+    bars.forEach(b => { b.className = 'strength-bar'; });
+    if (!val) return;
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const cls = score <= 1 ? 'active-weak' : score <= 2 ? 'active-med' : 'active-strong';
+    for (let i = 0; i < score; i++) bars[i].classList.add(cls);
+  }
+
+  function handleLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const pass  = document.getElementById('login-password').value;
+    if (!email || !pass) { showToast('⚠ Please fill in all fields', 'error'); return; }
+    if (!email.includes('@')) { showToast('⚠ Invalid email address', 'error'); return; }
+
+    // Admin shortcut
+    if (email === 'admin@nexchain.io' && pass === 'admin123') {
+      NX.setSession({ uid: 'admin', role: 'admin', email });
+      NX.addLog('login', 'Admin', 'Admin logged in', '#a5b4fc');
+      showToast('✓ Admin login — redirecting...');
+      setTimeout(() => { window.location.href = 'nexchain-admin.html'; }, 900);
+      return;
+    }
+
+    const users = NX.getUsers();
+    const user  = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === pass);
+
+    if (!user) { showToast('⚠ Invalid email or password', 'error'); return; }
+    if (user.status === 'suspended') { showToast('⊗ Account suspended. Contact support.', 'error'); return; }
+
+    NX.setSession({ uid: user.id, role: 'user', email: user.email });
+    NX.updateUser(user.id, { lastActive: 'Just now' });
+    NX.addLog('login', user.fname + ' ' + user.lname[0] + '.', `Logged in successfully`, '#00ffa3');
+
+    showToast('✓ Login successful! Redirecting...');
+    setTimeout(() => { window.location.href = 'nexchain-profile.html'; }, 900);
+  }
+
+  function handleRegister() {
+    const fname = document.getElementById('reg-fname').value.trim();
+    const lname = document.getElementById('reg-lname').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const pass  = document.getElementById('reg-password').value;
+    const tos   = document.getElementById('tos-check').checked;
+
+    if (!fname || !lname || !email || !pass) { showToast('⚠ Please fill in all fields', 'error'); return; }
+    if (!email.includes('@')) { showToast('⚠ Invalid email address', 'error'); return; }
+    if (pass.length < 8) { showToast('⚠ Password must be 8+ characters', 'error'); return; }
+    if (!tos) { showToast('⚠ Please accept the Terms of Service', 'error'); return; }
+
+    const users = NX.getUsers();
+    if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+      showToast('⚠ An account with this email already exists', 'error'); return;
+    }
+
+    const id = 'u' + Date.now();
+    const now = new Date();
+    const joined = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    const newUser = {
+      id, fname, lname, email, password: pass,
+      status: 'active', kyc: 'not_submitted', tier: 'Standard',
+      balance: 0, creditScore: 30, giftApplied: false,
+      joined, lastActive: 'Just now', wallets: []
+    };
+    users.push(newUser);
+    NX.setUsers(users);
+    NX.setSession({ uid: id, role: 'user', email });
+    NX.addLog('register', fname + ' ' + lname[0] + '.', `New account created`, '#00c8ff');
+
+    showToast('✓ Account created! Taking you to your dashboard...');
+    setTimeout(() => { window.location.href = 'nexchain-profile.html'; }, 1000);
+  }
+
+  // Add error toast style
+  const style = document.createElement('style');
+  style.textContent = `.toast.error { border-color: var(--danger) !important; color: var(--danger) !important; }`;
+  document.head.appendChild(style);
+</script>
+</body>
+</html>
